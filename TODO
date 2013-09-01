@@ -1,0 +1,21 @@
+A TODO list :-)
+
+
+For 1.0:
+- Fix seekbar while buffering
+- Caching on the server
+- Cache in browser (cache playlist, remove cache when deleting)
+- config.ini
+
+
+For future versions:
+
+- Add various options
+- Test various browsers
+- Actually deal with various error
+- More flexible library (grouping by arbitrary tags)
+- Specify columns in playlist
+- Resize columns in playlist
+- Support for reading more codecs (ape, mpc, aac, etc.)
+- Touch device support
+- Windows support
