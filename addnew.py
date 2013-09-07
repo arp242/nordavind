@@ -28,7 +28,7 @@ for root, dirs, files in os.walk(walkdir):
 		try:
 			if f.split('.').pop().lower() in ['mp3', 'flac']:
 				if '%s/%s' % (root, f) in paths: continue
-				nordavind.add_or_update_track(('%s/%s' % (root, f)))
+				nordavind.addOrUpdateTrack(('%s/%s' % (root, f)))
 		except:
 			print('Error with %s/%s' % (root, f))
 			raise

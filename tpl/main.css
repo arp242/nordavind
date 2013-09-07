@@ -118,7 +118,6 @@ body {
 }
 /*** Library ***/
 #library ol {
-  border-right: 1px solid #b7b7b7;
   position: relative;
   overflow-y: hidden;
 }
@@ -389,7 +388,7 @@ tr.active {
 }
 #status a {
   float: right;
-  background-color: #2A1F4A;
+  background-color: #2a1f4a;
   color: #fff;
   padding: 0 20px;
   text-align: center;
@@ -415,6 +414,7 @@ tr.active {
   padding: 0 2px;
 }
 .resize-handle {
+  display: none;
   position: absolute;
   background-color: #eee;
   border-color: #ddd;

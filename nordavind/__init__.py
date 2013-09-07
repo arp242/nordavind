@@ -7,8 +7,7 @@
 # See below for full copyright
 #
 
-import cgi, datetime, os, re, sys, traceback, urllib.parse, sqlite3
-import _thread, time, shlex, subprocess, base64
+import os, re, sys, urllib.parse, sqlite3, shlex, subprocess, base64
 
 from jinja2 import Environment, FileSystemLoader
 import taglib
@@ -20,7 +19,7 @@ _db = None
 config = None
 
 
-def OpenDb():
+def openDb():
 	global _db
 	_db = sqlite3.connect(config['dbpath'],
 		detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
@@ -33,14 +32,14 @@ def OpenDb():
 	_db.row_factory = dict_factory
 
 
-def Template(f, v):
+def template(f, v):
 	env = Environment(loader=FileSystemLoader('%s/tpl' % _root))
 	env.filters['urlencode'] = lambda s: urllib.parse.quote_plus(s, '')
 
 	return re.sub(r'>\s*<', '><', env.get_template(f).render(**v))
 
 
-def CreateDb():
+def createDb():
 	c = _db.cursor()
 
 	c.execute('''create table artists (
@@ -76,20 +75,20 @@ def CreateDb():
 	_db.commit()
 
 
-def add_or_update_track(path):
+def addOrUpdateTrack(path):
 	c = _db.cursor()
 	track = c.execute('select * from tracks where path = ?',
 		(path,)).fetchone()
 
-	tags = gettags(path)
+	tags = getTags(path)
 	# Add track
-	if track == None:
+	if track is None:
 		album = c.execute('select * from albums where name = ?',
 			(tags.get('album'),)
 		).fetchone()
 
 		# Add album
-		if album == None:
+		if album is None:
 			a = tags.get('albumartist')
 			if not a: a = tags.get('artist')
 
@@ -97,7 +96,7 @@ def add_or_update_track(path):
 				(a,)).fetchone()
 
 			# Add artist
-			if artist == None:
+			if artist is None:
 				c.execute('insert into artists (name) values (?)',
 					(a,))
 				artist = c.lastrowid
@@ -128,11 +127,12 @@ def add_or_update_track(path):
 	_db.commit()
 
 
-def gettags(path):
+def getTags(path):
 	r = {}
 	# Sometimes this prints a (harmless) warning, AFAIK this can't be disabled
 	# :-/
 	f = taglib.File(path)
+
 	for k, v in f.tags.items():
 		if k in ['DISCNUMBER', 'TRACKNUMBER']:
 			v = [v[0].split('/')[0]]
@@ -142,12 +142,11 @@ def gettags(path):
 	return r
 
 
-def getlibrary():
+def getLibrary():
 	c = _db.cursor()
 
 	r = []
-	artists = c.execute('select * from artists order by name').fetchall()
-	for a in artists:
+	for a in c.execute('select * from artists order by name').fetchall():
 		r.append({
 			'id': a['id'],
 			'name': a['name'],
@@ -158,42 +157,66 @@ def getlibrary():
 	return r
 
 
-def getalbum(id):
-	c = _db.cursor()
-
-	album = c.execute('''select albums.*, artists.name as artistname from albums
-		inner join artists on artists.id = albums.artist
-		where albums.id=?''', (id,)).fetchone()
-	album['tracks'] = c.execute('select * from tracks where album=? order by discno, trackno',
-		(id,)).fetchall()
-
-	return album
-
-
-def playtrack(codec, id):
+def playTrack(codec, id):
 	c = _db.cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
 
-	cache = '%s/%s.%s' % (config['cachepath'], re.sub(r'[^\w]', '', track['path']), codec)
+	cache = None
+	if config['cachepath'] not in [None, False, '']:
+		cache = '%s/%s.%s' % (config['cachepath'], re.sub(r'[^\w]', '', track['path']), codec)
 
-	#if not os.path.exists(cache) or os.stat(cache).st_size == 0:
-	src = '%s/stream-audio/%s/%s' % (
-		_wwwroot,
-		urllib.parse.quote_plus(track['path'].replace('/', '||')),
-		urllib.parse.quote_plus(cache.replace('/', '||')))
-	#else:
-	#	src = cache.replace(_root, '')
+	if cache and os.path.exists(cache):
+		fp = open(cache, 'rb')
+		while True:
+			buf = fp.read(8192)
+			if not buf: break
+			yield buf
+	else:
+		path = track['path']
+		t = path.split('.').pop()
 
-	return {
-		'src': src,
-	}
+		if codec == 'ogg':
+			if t == 'flac':
+				cmd = 'flac -sd %s -o -| oggenc - -q8 -Qo -' % shlex.quote(path)
+			elif t == 'mp3':
+				cmd = 'mpg123 -qw- %s| oggenc - -q8 -Qo -' % shlex.quote(path)
+			elif t == 'ogg':
+				cmd = 'cat'
+				cache = None
+		elif codec == 'mp3':
+			if t == 'flac':
+				cmd = 'flac -sd %s -o -| lame --quiet -V2 - -' % shlex.quote(path)
+			elif t == 'ogg':
+				cmd = 'oggdec -Qo- %s | lame --quiet -V2 - -' % shlex.quote(path)
+			elif t == 'mp3':
+				cmd = 'cat'
+				cache = None
+
+		p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+
+		if cache is not None:
+			cachefp = open(cache + '_temp', 'wb')
+
+		while True:
+			buf = p.stdout.read(1024)
+			if not buf: break
+			if cache is not None: cachefp.write(buf)
+			yield buf
+
+		cachefp.close()
+		os.rename(cache + '_temp', cache)
 
 
-def gettrack(id):
+def playTrack_clean():
+	pass
+
+
+def getAlbum(id):
 	c = _db.cursor()
-	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
-	album = c.execute('select * from albums where id=?', (track['album'],)).fetchone()
+
+	album = c.execute('select * from albums where id=?', (id,)).fetchone()
 	artist = c.execute('select * from artists where id=?', (album['artist'],)).fetchone()
+	tracks = c.execute('select * from tracks where album=? order by discno, trackno', (album['id'],)).fetchall()
 
 	if album['cover']:
 		t = album['cover'].split('.').pop()
@@ -205,59 +228,25 @@ def gettrack(id):
 		album['coverdata'] = ''
 
 	return {
-		'track': track,
-		'album': album,
 		'artist': artist,
+		'album': album,
+		'tracks': tracks,
 	}
 
 
-def streamaudio(path, cache=None):
-	path = urllib.parse.unquote_plus(path.replace('||', '/'))
-	codec = cache.split('.').pop()
-
-	cache = None # TODO
-
-	if cache != None:
-		cache = urllib.parse.unquote_plus(cache.replace('||', '/'))
-
-	#if cache != None and os.path.exists(cache):
-	#	return open(cache, 'rb').read()
-
-	t = path.split('.').pop()
-
-	if codec == 'ogg':
-		if t == 'flac':
-			cmd = 'flac -sd %s -o -| oggenc - -q8 -Qo -' % shlex.quote(path)
-		elif t == 'mp3':
-			cmd = 'mpg123 -qw- %s| oggenc - -q8 -Qo -' % shlex.quote(path)
-		elif t == 'ogg':
-			cmd = 'cat'
-			cache = None
-	elif codec == 'mp3':
-		if t == 'flac':
-			cmd = 'flac -sd %s -o -| lame --quiet -V2 - -' % shlex.quote(path)
-		elif t == 'ogg':
-			cmd = 'oggdec -Qo- %s | lame --quiet -V2 - -' % shlex.quote(path)
-		elif t == 'mp3':
-			cmd = 'cat'
-			cache = None
-
-	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-
-	if cache != None:
-		cachefp = open(cache, 'wb')
-
-	while True:
-		buf = p.stdout.read(1024)
-		if not buf: break
-		if cache != None: cachefp.write(buf)
-		yield buf
+def getAlbumByTrack(id):
+	c = _db.cursor()
+	return getAlbum(c.execute('select * from tracks where id=?',
+		(id,)).fetchone()['album'])
 
 
 def start():
-	OpenDb()
+	openDb()
 	if len(_db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
-		CreateDb()
+		createDb()
+
+	if not os.path.exists(config['cachepath']):
+		os.makedirs(config['cachepath'])
 
 
 # TODO: Get from file

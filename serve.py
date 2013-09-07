@@ -7,7 +7,7 @@
 # See below for full copyright
 #
 
-import sys, json
+import sys, json, os
 
 import cherrypy
 
@@ -23,41 +23,32 @@ class AgentCooper:
 	@cherrypy.expose
 	def index():
 		nordavind.start()
-		return nordavind.Template('main.html', {
-			'library': nordavind.getlibrary(),
+		return nordavind.template('main.html', {
+			'library': nordavind.getLibrary(),
 		})
 
 
 	@cherrypy.expose
 	def get_album(albumid):
 		nordavind.start()
-		return json.dumps(
-			nordavind.getalbum(albumid)
-		, default=JSONDefault)
+		return json.dumps(nordavind.getAlbum(albumid),
+			default=JSONDefault)
 
 
 	@cherrypy.expose
-	def get_track(trackid):
+	def get_album_by_track(trackid):
 		nordavind.start()
-		return json.dumps(
-			nordavind.gettrack(trackid)
-		, default=JSONDefault)
+		return json.dumps(nordavind.getAlbumByTrack(trackid),
+			default=JSONDefault)
 
 
 	@cherrypy.expose
 	def play_track(codec, trackid):
 		nordavind.start()
-		return json.dumps(
-			nordavind.playtrack(codec, trackid)
-		, default=JSONDefault)
 
-
-	@cherrypy.expose
-	def stream_audio(path, cache):
-		cherrypy.response.headers['Content-Type'] = 'audio/%s' % cache.split('.').pop()
-		nordavind.start()
-		return nordavind.streamaudio(path, cache)
-	stream_audio._cp_config = {'response.stream': True}
+		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
+		return nordavind.playTrack(codec, trackid)
+	play_track._cp_config = {'response.stream': True}
 
 
 server = '0.0.0.0'
@@ -69,20 +60,23 @@ if len(sys.argv) > 1:
 	if len(listen) > 1:
 		port = listen[1]
 
+cherrypy.tools.playTrack_clean = cherrypy.Tool('on_end_request', nordavind.playTrack_clean)
 cherrypy.config.update({
 	'server.socket_host': server,
 	'server.socket_port': port,
 })
 cherrypy.quickstart(AgentCooper, config={
 	'/': {
-		'tools.staticdir.root': '/data/code/music/',
+		'tools.staticdir.root': os.path.dirname(os.path.realpath(sys.argv[0])),
 	},
 	'/tpl': {
 		'tools.staticdir.on': 'True',
 		'tools.staticdir.dir': 'tpl',
 	},
+	'/play-track': {
+		'tools.playTrack_clean.on': True,
+	}
 })
-
 
 
 # The MIT License (MIT)

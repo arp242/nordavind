@@ -6,14 +6,18 @@ For 1.0:
 - Caching on the server
 - Cache in browser (cache playlist, remove cache when deleting)
 - config.ini
+- Add shading to selected rows
+- Don't show tray | in status
+- Pretty-print remaining in status
+- Select playlist row on playback
 
 
 For future versions:
 
 - Add various options
 - Test various browsers
-- Actually deal with various error
-- More flexible library (grouping by arbitrary tags)
+- Actually deal with various errors
+- More flexible library view (ie. grouping by arbitrary tags)
 - Specify columns in playlist
 - Resize columns in playlist
 - Support for reading more codecs (ape, mpc, aac, etc.)
