@@ -64,6 +64,7 @@
         $('#player').attr('class', 'right-of-library stopped');
         store.set('lasttrack', null);
         my._bufstart = null;
+        $('#status span').html('');
         return $('#status span:eq(0)').html('Stopped');
       });
     };
@@ -112,7 +113,7 @@
         move: function(pos) {
           var v;
 
-          v = my.audio.seekable.end(0) / 100 * pos;
+          v = my._curplaying.length / 100 * pos;
           my.audio.currentTime = v;
           return displaytime(v);
         },
@@ -145,12 +146,14 @@
         if (!my.playNext()) {
           $('#player').attr('class', 'right-of-library stopped');
           store.set('lasttrack', null);
+          $('#status span').html('');
           return $('#status span:eq(0)').html('Stopped');
         }
       });
       $(this.audio).bind('timeupdate', function(e) {
         var t, v;
 
+        log(my.audio.currentTime);
         if (my._draggingseekbar) {
           return;
         }
@@ -178,7 +181,7 @@
           }
           dur = new Date().getTime() / 1000 - my.bufstart;
           r = (dur / c) * (100 - c);
-          return $('#status span:eq(2)').html("Buffer " + c + "% (~" + (Math.round(r)) + "s remaining)");
+          return $('#status span:eq(2)').html("Buffer " + c + "% (~" + (displaytime(Math.round(r))) + "s remaining)");
         }
       });
       return $(this.audio).bind('progress', function(e) {
@@ -203,12 +206,17 @@
       var row;
 
       if (this.codec === null) {
-        return;
+        return alert("Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback");
       }
+      this.bufstart = null;
       this.audio.pause();
       this.audio.src = '';
       this.audio.src = "" + _root + "/play-track/" + this.codec + "/" + trackId;
       this.audio.play();
+      this._curplaying = {
+        trackId: trackId,
+        length: length
+      };
       row = $("#playlist tr[data-id=" + trackId + "]");
       $('#playlist tr').removeClass('playing');
       row.addClass('playing').find('td:eq(0)').html('<i class="icon-play"></i>');

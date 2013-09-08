@@ -7,7 +7,7 @@
 # See below for full copyright
 #
 
-import sys, json, os
+import sys, json, os, datetime
 
 import cherrypy
 
@@ -19,11 +19,22 @@ def JSONDefault(obj):
 		return obj.strftime('%Y-%m-%d %H:%M')
 
 
+def dbcache():
+	mtime = datetime.datetime.fromtimestamp(int(os.stat(nordavind.config['dbpath']).st_mtime))
+	fmt = '%a, %d %b %Y %H:%M:%S GMT'
+	cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
+	cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+	cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
+
+
 class AgentCooper:
 	@cherrypy.expose
 	def index():
 		nordavind.start()
+		dbcache()
+
 		return nordavind.template('main.html', {
+			'version': '1.0',
 			'library': nordavind.getLibrary(),
 		})
 
@@ -31,6 +42,7 @@ class AgentCooper:
 	@cherrypy.expose
 	def get_album(albumid):
 		nordavind.start()
+		dbcache()
 		return json.dumps(nordavind.getAlbum(albumid),
 			default=JSONDefault)
 
@@ -38,6 +50,7 @@ class AgentCooper:
 	@cherrypy.expose
 	def get_album_by_track(trackid):
 		nordavind.start()
+		dbcache()
 		return json.dumps(nordavind.getAlbumByTrack(trackid),
 			default=JSONDefault)
 
@@ -47,8 +60,33 @@ class AgentCooper:
 		nordavind.start()
 
 		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
+		cherrypy.request.hooks.attach('on_end_request',
+			lambda: nordavind.playTrack_clean(trackid), True)
 		return nordavind.playTrack(codec, trackid)
 	play_track._cp_config = {'response.stream': True}
+
+
+	@cherrypy.expose
+	def clean_cache(tracks=None):
+		for t in tracks.split(','):
+			nordavind.cleanCache(t)
+
+
+	@cherrypy.expose
+	def tpl(*args, **kwargs):
+		path = '%s/tpl/%s' % (nordavind._root, '/'.join(args))
+
+		if not os.path.exists(path):
+			raise cherrypy.NotFound()
+
+		mtime = datetime.datetime.fromtimestamp(int(os.stat('config.cfg').st_mtime))
+		fmt = '%a, %d %b %Y %H:%M:%S GMT'
+
+		cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
+		cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+		cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
+
+		return cherrypy.lib.static.serve_file(path)
 
 
 server = '0.0.0.0'
@@ -60,23 +98,25 @@ if len(sys.argv) > 1:
 	if len(listen) > 1:
 		port = listen[1]
 
-cherrypy.tools.playTrack_clean = cherrypy.Tool('on_end_request', nordavind.playTrack_clean)
 cherrypy.config.update({
 	'server.socket_host': server,
 	'server.socket_port': port,
 })
+
 cherrypy.quickstart(AgentCooper, config={
 	'/': {
-		'tools.staticdir.root': os.path.dirname(os.path.realpath(sys.argv[0])),
-	},
-	'/tpl': {
-		'tools.staticdir.on': 'True',
-		'tools.staticdir.dir': 'tpl',
-	},
-	'/play-track': {
-		'tools.playTrack_clean.on': True,
+		'tools.gzip.on': True,
+		'tools.gzip.mime_types': ['text/css', 'text/html', 'text/plain', 'application/json', 'application/javascript'],
+
+		'tools.auth_digest.on': True,
+		'tools.auth_digest.realm': 'Nordavind',
+		'tools.auth_digest.key': nordavind.config['authkey'],
+		'tools.auth_digest.get_ha1': cherrypy.lib.auth_digest.get_ha1_dict_plain(
+			{ nordavind.config['user']: nordavind.config['password'] }
+		)
 	}
 })
+
 
 
 # The MIT License (MIT)

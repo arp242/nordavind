@@ -29,23 +29,30 @@
 
 
     Library.prototype.toggleArtist = function(row) {
-      var n;
+      var hide, n;
 
       row = row.closest('li');
       if (!row.is('.artist')) {
         return;
+      }
+      if (row.find('i').attr('class') === 'icon-expand-alt') {
+        row.find('i').attr('class', 'icon-collapse-alt');
+        hide = false;
+      } else {
+        row.find('i').attr('class', 'icon-expand-alt');
+        hide = true;
       }
       n = row.next();
       while (true) {
         if (!n.hasClass('album')) {
           break;
         }
-        if (n.css('display') === 'block') {
+        if (hide) {
           n.css('display', 'none');
-          row.find('i').attr('class', 'icon-expand-alt');
         } else {
-          n.css('display', 'block');
-          row.find('i').attr('class', 'icon-collapse-alt');
+          if ($('#search input').val() === '' || n.attr('data-match') === 'true') {
+            n.css('display', 'block');
+          }
         }
         n = n.next();
       }
@@ -145,11 +152,24 @@
         $('#library li').hide();
         $('#library ol')[0].scrollTop = 0;
         $$('#library li').forEach(function(row) {
+          var n, _results;
+
           row = $(row);
           if (row.text().toLowerCase().match(term)) {
             if (row.is('.artist')) {
-              return row.show();
+              row.show();
+              n = row.next();
+              _results = [];
+              while (true) {
+                if (!n.hasClass('album')) {
+                  break;
+                }
+                n.attr('data-match', 'true');
+                _results.push(n = n.next());
+              }
+              return _results;
             } else {
+              row.attr('data-match', 'true');
               return row.findPrev('.artist').show();
             }
           }

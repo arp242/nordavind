@@ -201,7 +201,7 @@ body {
 #player .seekbar .buffer {
   position: absolute;
   left: 0;
-  top: 9px;
+  top: 4px;
   height: 2px;
   background-color: #ccc;
   z-index: 1;
@@ -235,6 +235,7 @@ body {
   height: 100%;
   float: right;
   margin-top: 4px;
+  z-index: 10;
 }
 #info img[src=""] {
   display: none;
@@ -308,8 +309,14 @@ body {
   background-color: #8592b5;
   color: #fff;
 }
+#playlist-wrapper .selected:nth-child(odd) td {
+  background-color: #95a0bf;
+}
 #playlist-wrapper.pane-active .selected td {
   background-color: #0a246a;
+}
+#playlist-wrapper.pane-active .selected:nth-child(odd) td {
+  background-color: #0c2c81;
 }
 tr.active {
   outline: 1px solid #333;
@@ -383,7 +390,7 @@ tr.active {
 }
 /*** Status ***/
 #status span:not(:empty) {
-  border-right: 1px solid #333;
+  border-left: 1px solid #333;
   padding: 0 8px;
 }
 #status a {
@@ -400,8 +407,6 @@ tr.active {
 #status span:first-of-type {
   margin-left: 0;
   padding-left: 0;
-}
-#status span:last-of-type {
   border: none;
 }
 #tooltip {
@@ -427,4 +432,28 @@ tr.active {
   width: 9px;
   border-radius: 2px;
   background-color: #aaa;
+}
+#selectbox {
+  border: 1px solid #00f;
+  background-color: #44f;
+  border-radius: 2px;
+  opacity: 0.25;
+  position: absolute;
+}
+#large-cover {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 20px;
+  z-index: 100;
+}
+#large-cover img {
+  max-width: 100%;
+  max-height: 100%;
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  box-shadow: -2px -2px 2px rgba(0, 0, 0, 0.05);
+  border-top-left-radius: 1px;
 }

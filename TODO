@@ -1,22 +1,16 @@
+- sqlite errors
+
+
 A TODO list :-)
 
-
-For 1.0:
-- Fix seekbar while buffering
-- Caching on the server
-- Cache in browser (cache playlist, remove cache when deleting)
-- config.ini
-- Add shading to selected rows
-- Don't show tray | in status
-- Pretty-print remaining in status
-- Select playlist row on playback
-
-
-For future versions:
-
-- Add various options
-- Test various browsers
-- Actually deal with various errors
+- Gapless playback
+- Control config.cfg from browser
+- Add various options to config.cfg
+- ReplayGain
+- last.fm
+- Select multiple rows in playlist with the mouse
+- Test (& fix) various browsers
+- Actually deal with various errors that may occur
 - More flexible library view (ie. grouping by arbitrary tags)
 - Specify columns in playlist
 - Resize columns in playlist

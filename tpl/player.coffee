@@ -48,7 +48,9 @@ window.Player = class Player
 			$('#player').attr 'class', 'right-of-library stopped'
 			store.set 'lasttrack', null
 			my._bufstart = null
+			$('#status span').html ''
 			$('#status span:eq(0)').html 'Stopped'
+
 
 
 	###
@@ -81,7 +83,7 @@ window.Player = class Player
 			target: $('#player .seekbar')
 			start: -> my._draggingseekbar = true
 			move: (pos) ->
-				v = my.audio.seekable.end(0) / 100 * pos
+				v = my._curplaying.length / 100 * pos
 				my.audio.currentTime = v
 				return displaytime v
 			stop: -> my._draggingseekbar = false
@@ -107,9 +109,11 @@ window.Player = class Player
 			unless my.playNext()
 				$('#player').attr 'class', 'right-of-library stopped'
 				store.set 'lasttrack', null
+				$('#status span').html ''
 				$('#status span:eq(0)').html 'Stopped'
 
 		$(@audio).bind 'timeupdate', (e) ->
+			log my.audio.currentTime
 			return if my._draggingseekbar
 			v = my.audio.currentTime / my._curplaying.length * 100
 			my.seekbar.setpos v
@@ -134,7 +138,7 @@ window.Player = class Player
 				dur = (new Date().getTime() / 1000 - my.bufstart)
 				r = (dur / c) * (100 - c)
 
-				$('#status span:eq(2)').html "Buffer #{c}% (~#{Math.round r}s remaining)"
+				$('#status span:eq(2)').html "Buffer #{c}% (~#{displaytime Math.round(r)}s remaining)"
 
 		$(@audio).bind 'progress', (e) ->
 			try
@@ -148,12 +152,18 @@ window.Player = class Player
 	Play audio file `trackId` of `length` seconds
 	###
 	play: (trackId, length) ->
-		return if @codec is null
+		if @codec is null
+			return alert "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
 
+		@bufstart = null
 		@audio.pause()
 		@audio.src = ''
 		@audio.src = "#{_root}/play-track/#{@codec}/#{trackId}"
 		@audio.play()
+
+		@_curplaying =
+			trackId: trackId
+			length: length
 
 		row = $("#playlist tr[data-id=#{trackId}]")
 		$('#playlist tr').removeClass 'playing'

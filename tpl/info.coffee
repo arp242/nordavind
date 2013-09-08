@@ -10,6 +10,23 @@ window.Info = class Info
 		$('#info .table-wrapper').scrollbar
 			wheelSpeed: 150
 
+		$('#info').on 'click', 'img', (e) ->
+			img = $(this)
+			return if img.attr('src') is ''
+
+			$('body').append """<div id='large-cover'>
+				<img src='#{img.attr 'src'}' alt=''>
+			</div>"""
+
+			$('#large-cover').one 'click', (e) ->
+				$(this).remove()
+
+	###
+	###
+	clear: ->
+		$('#info img').attr 'src', ''
+		$('#info tbody').html ''
+
 
 	###
 	Set info to trackId
@@ -36,6 +53,8 @@ window.Info = class Info
 					my._set t if t.id is trackId.toNum()
 
 
+	###
+	###
 	_set: (track) ->
 		album = window._cache['albums'][track.album]
 		artist = window._cache['artists'][album.artist]

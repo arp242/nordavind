@@ -109,8 +109,6 @@ window.setSize = ->
 
 
 $(document).ready ->
-	#detectSupport()
-
 	# Reset inputs on page refresh
 	$('input').val ''
 
@@ -123,6 +121,7 @@ $(document).ready ->
 	window.player = new Player()
 	window.info = new Info()
 
+	#detectSupport()
 	initPanes()
 
 	setSize()

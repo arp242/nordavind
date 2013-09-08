@@ -23,16 +23,22 @@ window.Library = class Library
 		row = row.closest 'li'
 		return unless row.is '.artist'
 
+		if row.find('i').attr('class') is 'icon-expand-alt'
+			row.find('i').attr 'class', 'icon-collapse-alt'
+			hide = false
+		else
+			row.find('i').attr 'class', 'icon-expand-alt'
+			hide = true
+
 		n = row.next()
 		while true
 			break unless n.hasClass 'album'
 
-			if n.css('display') is 'block'
+			if hide
 				n.css 'display', 'none'
-				row.find('i').attr 'class', 'icon-expand-alt'
 			else
-				n.css 'display', 'block'
-				row.find('i').attr 'class', 'icon-collapse-alt'
+				if $('#search input').val() is '' or n.attr('data-match') is 'true'
+					n.css 'display', 'block'
 			n = n.next()
 
 		@updateScrollbar
@@ -125,7 +131,13 @@ window.Library = class Library
 				if row.text().toLowerCase().match term
 					if row.is('.artist')
 						row.show()
+						n = row.next()
+						while true
+							break unless n.hasClass 'album'
+							n.attr 'data-match', 'true'
+							n = n.next()
 					else
+						row.attr 'data-match', 'true'
 						row.findPrev('.artist').show()
 			@updateScrollbar
 

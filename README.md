@@ -7,19 +7,18 @@ Nordavind doesn’t offer the *extreme* flexibility that foobar2000 has).
 
 Browser support
 ===============
-Nordavind should work in all current browser versions. Examples of olders
-browsers that will *not* work are Internet Explorer 8 and Safari 5.
+Nordavind works best in Firefox, other current browsers (Opera, Chrome, IE10)
+also work, but all experience minor issues. At the moment adding features,
+tweaking the interface, and fixing real bugs is a higher priority than dealing
+with various browser quirks (Firefox just happens to be the only browser that
+works without fizzle).
 
-In particular, I’ve tested Opera 12 and Firefox 23 on Windows & FreeBSD.
-I did some basic testing with Chrome 29 and IE10, which seem to work okay.
-
-Note that (most) smartphones & tablets won’t work very well at the moment due to
-a number of problems. Some works needs to be done here.
+Browsers that will *never-ever* work are Internet Explorer 8 and Safari 5.
 
 
 Audio codecs
 ------------
-Nordavid uses the HTML5 `<audio>` capability, while all current browsers support
+Nordavid uses the HTML5 `<audio>` element, while all current browsers support
 this quite well, there are some difference, notably, in the supported codecs.
 
 - Firefox and Opera will play Ogg Vorbis files
@@ -62,7 +61,8 @@ Dependencies
 
 Configuration
 -------------
-TODO
+You almost certainly want to edit `config.cfg` and edit at least the `password`
+and `musicpath` options.
 
 
 Running
@@ -70,10 +70,8 @@ Running
 Run `serve.py` to start the server. You can optionally add an `address:port`
 to listen on (defaults to `0.0.0.0:8001`).
 
-
-Security
---------
-TODO
+Note that Nordavind only supports a single user; you can’t use the same
+installation with multiple users.
 
 
 Adding your music collection

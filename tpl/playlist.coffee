@@ -12,6 +12,9 @@ window.Playlist = class Playlist
 		@initKeyboard()
 		@initSort()
 
+		selectBox $('#playlist-wrapper')
+
+
 	###
 	Set a row as active
 	###
@@ -77,7 +80,10 @@ window.Playlist = class Playlist
 	###
 	Play this table row
 	###
-	playRow: (r) -> window.player.play $(r).attr('data-id'), $(r).attr('data-length')
+	playRow: (r) ->
+		window.player.play $(r).attr('data-id'), $(r).attr('data-length')
+		@clearSelection()
+		@selectRow r
 
 
 	###
@@ -125,6 +131,7 @@ window.Playlist = class Playlist
 				e.preventDefault()
 				albums = []
 				$('#playlist .selected').remove()
+				window.info.clear()
 				my.savePlaylist()
 				my.cleanCache()
 			# Up arrow
@@ -298,7 +305,6 @@ window.Playlist = class Playlist
 	###
 	###
 	cleanCache: ->
-		return
 		tracks = []
 		albums = []
 		artists = []
@@ -308,8 +314,25 @@ window.Playlist = class Playlist
 			albumid = window._cache.tracks[trackid]?.album
 			artistid = window._cache.albums[albumid]?.artist
 
-			tracks.push trackid
-			albums.push albumid
-			artists.push artistid
+			tracks.push trackid unless trackid in tracks
+			albums.push albumid unless albumid in albums
+			artists.push artistid unless artistid in artists
 
-		# TODO: Finish me
+		deleted = []
+		for k, t of window._cache.tracks
+			unless t.id in tracks
+				deleted.push t.id
+				delete window._cache.tracks[k]
+
+		for k, t of window._cache.albums
+			delete window._cache.albums[k] unless t.id in albums
+
+		for k, t of window._cache.artists
+			delete window._cache.artists[k] unless t.id in artists
+
+		if deleted.length > 0
+			jQuery.ajax
+				url: "#{_root}/clean-cache"
+				type: 'post'
+				data:
+					tracks: deleted.join ','

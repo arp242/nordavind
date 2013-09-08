@@ -7,7 +7,7 @@
 # See below for full copyright
 #
 
-import os, re, sys, urllib.parse, sqlite3, shlex, subprocess, base64
+import os, re, sys, urllib.parse, sqlite3, shlex, subprocess, base64, glob
 
 from jinja2 import Environment, FileSystemLoader
 import taglib
@@ -16,6 +16,7 @@ import taglib
 _root = os.path.dirname(os.path.realpath(sys.argv[0]))
 _wwwroot = ''
 _db = None
+_procs = {}
 config = None
 
 
@@ -156,14 +157,14 @@ def getLibrary():
 
 	return r
 
-
 def playTrack(codec, id):
+	global _procs
 	c = _db.cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
 
 	cache = None
-	if config['cachepath'] not in [None, False, '']:
-		cache = '%s/%s.%s' % (config['cachepath'], re.sub(r'[^\w]', '', track['path']), codec)
+	if config.get('cachepath') not in [None, False, '']:
+		cache = '%s/%s_%s.%s' % (config['cachepath'], id, re.sub(r'[^\w]', '', track['path']), codec)
 
 	if cache and os.path.exists(cache):
 		fp = open(cache, 'rb')
@@ -181,7 +182,7 @@ def playTrack(codec, id):
 			elif t == 'mp3':
 				cmd = 'mpg123 -qw- %s| oggenc - -q8 -Qo -' % shlex.quote(path)
 			elif t == 'ogg':
-				cmd = 'cat'
+				cmd = 'cat %s' % shlex.quote(path)
 				cache = None
 		elif codec == 'mp3':
 			if t == 'flac':
@@ -189,26 +190,33 @@ def playTrack(codec, id):
 			elif t == 'ogg':
 				cmd = 'oggdec -Qo- %s | lame --quiet -V2 - -' % shlex.quote(path)
 			elif t == 'mp3':
-				cmd = 'cat'
+				cmd = 'cat %s' % shlex.quote(path)
 				cache = None
 
-		p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+		_procs[id] = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 
 		if cache is not None:
 			cachefp = open(cache + '_temp', 'wb')
 
 		while True:
-			buf = p.stdout.read(1024)
+			buf = _procs[id].stdout.read(1024)
 			if not buf: break
 			if cache is not None: cachefp.write(buf)
 			yield buf
 
-		cachefp.close()
-		os.rename(cache + '_temp', cache)
+		del _procs[id]
+		if cache is not None:
+			cachefp.close()
+			os.rename(cache + '_temp', cache)
 
 
-def playTrack_clean():
-	pass
+def playTrack_clean(id):
+	global _procs
+
+	if _procs.get(id):
+		cleanCache(id)
+		_procs.get(id).kill()
+		del _procs[id]
 
 
 def getAlbum(id):
@@ -240,21 +248,38 @@ def getAlbumByTrack(id):
 		(id,)).fetchone()['album'])
 
 
+def cleanCache(trackid):
+	if config.get('cachepath') in [None, False, '']:
+		return
+
+	cache = glob.glob('%s/%s_*' % (config['cachepath'], trackid))
+	for c in cache: os.unlink(c)
+
+
 def start():
 	openDb()
 	if len(_db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
 		createDb()
 
-	if not os.path.exists(config['cachepath']):
+	if config.get('cachepath') not in [None, False, ''] and not os.path.exists(config['cachepath']):
 		os.makedirs(config['cachepath'])
 
+config = {}
+for line in open('config.cfg').readlines():
+	line = line.strip()
+	if line == '' or line[0] == '#': continue
 
-# TODO: Get from file
-config = {
-	'musicpath': '/data/music/',
-	'dbpath': '%s/db/db.sqlite3' % _root,
-	'cachepath': '/tmp/nordavind/',
-}
+	k, v = line.split('=')
+	k = k.strip()
+	v = v.strip()
+
+	if v == '': continue
+
+	if k == 'dbpath':
+		v = '%s/%s' % (_root, v)
+
+	config[k] = v
+	
 
 
 

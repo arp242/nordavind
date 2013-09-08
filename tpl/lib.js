@@ -106,10 +106,8 @@
       dragging = true;
       $(handle).css('z-index', '99');
       document.body.focus();
-      if (start != null) {
-        start.apply(this, [e]);
-      }
-      return false;
+      e.preventDefault();
+      return start != null ? start.apply(this, [e]) : void 0;
     };
     mouseup = function(e) {
       handle.removeClass('dragging');
@@ -123,13 +121,15 @@
 
   window.Slider = Slider = (function() {
     function Slider(opt) {
-      var my, setpos, start, stop, tooltip;
+      var h, my, setpos, start, stop, tooltip;
 
       this.opt = opt;
       my = this;
       opt.target = $(opt.target);
       opt.target.addClass('slider');
-      opt.target.append('<span class="slider-bar"></span>');
+      h = opt.target.html();
+      opt.target.html('');
+      opt.target.append("<span class='slider-bar'>" + h + "</span>");
       opt.target.append('<span class="slider-handle"></span>');
       this.bar = opt.target.find('.slider-bar');
       this.handle = opt.target.find('.slider-handle');
@@ -170,7 +170,11 @@
           return my.opt.start();
         }
       };
-      this.bar.bind('click', setpos);
+      this.bar.bind('click', function(e) {
+        start();
+        setpos(e);
+        return stop();
+      });
       babyUrADrag(this.handle, start, setpos, stop);
     }
 
@@ -185,5 +189,71 @@
     return Slider;
 
   })();
+
+  /*
+  */
+
+
+  window.selectBox = function(target) {
+    var box, dragging, startX, startY;
+
+    return;
+    target = $(target);
+    dragging = false;
+    box = null;
+    startX = 0;
+    startY = 0;
+    target.on('mousedown.selectbox', function(e) {
+      dragging = true;
+      $('body').append('<div id="selectbox"></div>');
+      box = $('#selectbox');
+      startX = e.pageX;
+      startY = e.pageY;
+      box.css({
+        left: "" + startX + "px",
+        top: "" + startY + "px"
+      });
+      document.body.focus();
+      return e.preventDefault();
+    });
+    $('body').on('mouseup.selectbox', function(e) {
+      dragging = false;
+      box.remove();
+      return box = null;
+    });
+    return $('body').on('mousemove.selectbox', function(e) {
+      var b, h, l, r, row, t, w;
+
+      if (!dragging) {
+        return;
+      }
+      row = $(e.target).closest('tr');
+      if (row.length > 0) {
+        window.playlist.selectRow(row);
+      }
+      w = $(window).width();
+      h = $(window).height();
+      if (e.pageX > startX) {
+        l = startX;
+        r = w - e.pageX;
+      } else {
+        l = e.pageX;
+        r = w - startX;
+      }
+      if (e.pageY > startY) {
+        t = startY;
+        b = h - e.pageY;
+      } else {
+        t = e.pageY;
+        b = h - startY;
+      }
+      return box.css({
+        left: l + 'px',
+        right: r + 'px',
+        top: t + 'px',
+        bottom: b + 'px'
+      });
+    });
+  };
 
 }).call(this);

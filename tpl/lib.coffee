@@ -66,9 +66,8 @@ window.babyUrADrag = (handle, start, move, end) ->
 		dragging = true
 		$(handle).css 'z-index', '99'
 		document.body.focus()
+		e.preventDefault()
 		start?.apply this, [e]
-
-		return false
 
 	mouseup = (e) ->
 		handle.removeClass 'dragging'
@@ -87,7 +86,9 @@ window.Slider = class Slider
 
 		opt.target = $(opt.target)
 		opt.target.addClass 'slider'
-		opt.target.append '<span class="slider-bar"></span>'
+		h = opt.target.html()
+		opt.target.html ''
+		opt.target.append "<span class='slider-bar'>#{h}</span>"
 		opt.target.append '<span class="slider-handle"></span>'
 
 		@bar = opt.target.find '.slider-bar'
@@ -116,7 +117,10 @@ window.Slider = class Slider
 
 		start = -> my.opt.start() if my.opt.start
 
-		@bar.bind 'click', setpos
+		@bar.bind 'click', (e) ->
+			start()
+			setpos e
+			stop()
 		babyUrADrag @handle, start, setpos, stop
 
 
@@ -129,3 +133,61 @@ window.Slider = class Slider
 	setpos: (p) ->
 		@handle.css 'left', "#{(@bar.width() - @handle.width()) / 100 * p}px"
 
+
+###
+###
+window.selectBox = (target) ->
+	return
+	target = $(target)
+
+	dragging = false
+	box = null
+	startX = 0
+	startY = 0
+	target.on 'mousedown.selectbox', (e) ->
+		dragging = true
+		$('body').append '<div id="selectbox"></div>'
+		box = $('#selectbox')
+
+		startX = e.pageX
+		startY = e.pageY
+
+		box.css
+			left: "#{startX}px"
+			top: "#{startY}px"
+		document.body.focus()
+		e.preventDefault()
+
+	$('body').on 'mouseup.selectbox', (e) ->
+		dragging = false
+		box.remove()
+		box = null
+
+	$('body').on 'mousemove.selectbox', (e) ->
+		return unless dragging
+
+		row = $(e.target).closest 'tr'
+		window.playlist.selectRow row if row.length > 0
+
+		w = $(window).width()
+		h = $(window).height()
+
+		if e.pageX > startX
+			l = startX
+			r = w - e.pageX
+		else
+			l = e.pageX
+			r = w - startX
+
+		if e.pageY > startY
+			t = startY
+			b = h - e.pageY
+		else
+			t = e.pageY
+			b = h - startY
+
+		box.css
+			left: l + 'px'
+			right: r + 'px'
+			top: t + 'px'
+			bottom: b + 'px'

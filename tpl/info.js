@@ -13,7 +13,28 @@
       $('#info .table-wrapper').scrollbar({
         wheelSpeed: 150
       });
+      $('#info').on('click', 'img', function(e) {
+        var img;
+
+        img = $(this);
+        if (img.attr('src') === '') {
+          return;
+        }
+        $('body').append("<div id='large-cover'>\n	<img src='" + (img.attr('src')) + "' alt=''>\n</div>");
+        return $('#large-cover').one('click', function(e) {
+          return $(this).remove();
+        });
+      });
     }
+
+    /*
+    */
+
+
+    Info.prototype.clear = function() {
+      $('#info img').attr('src', '');
+      return $('#info tbody').html('');
+    };
 
     /*
     	Set info to trackId
@@ -57,6 +78,10 @@
         }
       });
     };
+
+    /*
+    */
+
 
     Info.prototype._set = function(track) {
       var album, artist;
