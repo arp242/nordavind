@@ -19,13 +19,13 @@ window._cache =
 	artists: {}
 
 
+setPane = (p) ->
+	window._activepane = $(p)
+	$('.pane-active').removeClass 'pane-active'
+	window._activepane.addClass 'pane-active'
+
 # Init. the resize handlers for the various panes
 initPanes = ->
-	setPane = (p) ->
-		window._activepane = $(p)
-		$('.pane-active').removeClass 'pane-active'
-		window._activepane.addClass 'pane-active'
-
 	$('body').on 'click', '#library', -> setPane this
 	$('body').on 'click', '#playlist-wrapper', -> setPane this
 	$('body').on 'click', '#player', -> setPane this
@@ -91,8 +91,8 @@ detectSupport = ->
 		window.player.codec = 'ogg'
 	else if new Audio().canPlayType('audio/mp3; codecs="mp3"') isnt ''
 		window.player.codec = 'mp3'
-	else
-		err.push "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
+	#else
+	#	err.push "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
 
 	# TODO: We can do better than an alert()
 	alert err.join '\n' if err.length > 0
@@ -108,6 +108,42 @@ window.setSize = ->
 	$('#info .table-wrapper').width $('#info').width() - $('#info img').width() - 20
 
 
+initGlobalKeys = ->
+	cycle = ['#library', '#playlist-wrapper', '#search input', '#player .play',
+		'#player .pause', '#player .backward', '#player .forward', '#player .stop']
+
+	$('body').on 'keydown', (e) ->
+		return unless e.keyCode is 9
+
+		e.preventDefault()
+
+		active = null
+		cycle.forEach (sel) ->
+			active = sel if $(document.activeElement).is sel
+
+		if active is null
+			cycle.forEach (sel) ->
+				active = sel if $('.pane-active').is sel
+
+		if active is null
+			setPane $('#library')
+		else
+			n = cycle.indexOf(active) + 1
+			n = 0 if n > cycle.length - 1
+
+			# This is a hack for the pause/play button
+			n += 1 unless $(cycle[n]).is ':visible'
+
+			$(active).blur()
+			$('.pane-active').removeClass 'pane-active'
+			window._activepane = null
+
+			if $(cycle[n]).hasClass('pane')
+				setPane $(cycle[n])
+			else
+				$(cycle[n]).focus()
+
+
 $(document).ready ->
 	# Reset inputs on page refresh
 	$('input').val ''
@@ -121,8 +157,9 @@ $(document).ready ->
 	window.player = new Player()
 	window.info = new Info()
 
-	#detectSupport()
+	detectSupport()
 	initPanes()
+	initGlobalKeys()
 
 	setSize()
 	$(window).on 'resize', setSize

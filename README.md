@@ -1,13 +1,15 @@
 Nordavind is a web based audio player. The idea is that you can play your music
 collection at home anywhere.
 
-The UI is inspired by foobar2000, or rather, my particular foobar2000 setup (
-Nordavind doesn’t offer the *extreme* flexibility that foobar2000 has).
+The UI is inspired by foobar2000, or rather, my particular foobar2000 setup
+(Nordavind doesn’t offer the *extreme* flexibility that foobar2000 has).
+
+For a general impression, check out the [screenshots](https://bitbucket.org/Carpetsmoker/nordavind/wiki/Home)
 
 
 Browser support
 ===============
-Nordavind works best in Firefox, other current browsers (Opera, Chrome, IE10)
+**Nordavind works best in Firefox**, other current browsers (Opera, Chrome, IE10)
 also work, but all experience minor issues. At the moment adding features,
 tweaking the interface, and fixing real bugs is a higher priority than dealing
 with various browser quirks (Firefox just happens to be the only browser that
@@ -87,6 +89,51 @@ if given, only that directory will be updated.
 
 These scripts may give harmless warnings; they're from taglib, You can safely
 ignore them (doesn't seem like they can can be disabled...)
+
+
+Using Nordavind
+===============
+A pane (library, playlist, player, info) needs to have focus for it to receive
+keybinds.
+
+
+Global
+------
+- The tab key cycles focus between playlist, library, filter, and the player
+  buttons
+
+
+Library
+-------
+- Doubleclicking an artist will open/close it
+
+- Doubleclicking an album will append it to the playlist
+
+- Middleclicking either an artist or album will append it to the playlist (note
+  that there's no reliable way to prevent the default action on middle click, so
+  this may do unexpected things)
+
+- Typing any text while the library is focused will highlight whatever you’re
+  typing (similar to many native desktop applications)
+
+
+Playlist
+--------
+- You can select multiple rows with the shift & ctrl modifier keys
+
+- Arrow keys, page{up,down}, home, and end all work as expected.
+
+- ctrl+a selects everything
+
+
+Info
+----
+- Click on the album to get a larger view
+
+
+Player
+------
+Nothing yet...
 
 
 Changelog

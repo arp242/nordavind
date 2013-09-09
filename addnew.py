@@ -8,9 +8,9 @@ import sys, os
 import nordavind
 
 nordavind._root = os.path.dirname(os.path.realpath(sys.argv[0]))
-nordavind.start()
 
-c = nordavind._db.cursor()
+db = nordabind.openDb()
+c = db.cursor()
 paths = [ r['path'] for r in c.execute('select path from tracks').fetchall() ]
 
 walkdir = nordavind.config['musicpath']

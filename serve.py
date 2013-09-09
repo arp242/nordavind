@@ -23,16 +23,15 @@ def dbcache():
 	mtime = datetime.datetime.fromtimestamp(int(os.stat(nordavind.config['dbpath']).st_mtime))
 	fmt = '%a, %d %b %Y %H:%M:%S GMT'
 	cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-	cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+	#cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+	cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
 	cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
 
 
 class AgentCooper:
 	@cherrypy.expose
 	def index():
-		nordavind.start()
 		dbcache()
-
 		return nordavind.template('main.html', {
 			'version': '1.0',
 			'library': nordavind.getLibrary(),
@@ -41,7 +40,6 @@ class AgentCooper:
 
 	@cherrypy.expose
 	def get_album(albumid):
-		nordavind.start()
 		dbcache()
 		return json.dumps(nordavind.getAlbum(albumid),
 			default=JSONDefault)
@@ -49,7 +47,6 @@ class AgentCooper:
 
 	@cherrypy.expose
 	def get_album_by_track(trackid):
-		nordavind.start()
 		dbcache()
 		return json.dumps(nordavind.getAlbumByTrack(trackid),
 			default=JSONDefault)
@@ -83,7 +80,8 @@ class AgentCooper:
 		fmt = '%a, %d %b %Y %H:%M:%S GMT'
 
 		cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-		cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+		#cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
+		cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
 		cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
 
 		return cherrypy.lib.static.serve_file(path)

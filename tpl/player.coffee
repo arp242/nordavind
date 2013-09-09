@@ -113,7 +113,7 @@ window.Player = class Player
 				$('#status span:eq(0)').html 'Stopped'
 
 		$(@audio).bind 'timeupdate', (e) ->
-			log my.audio.currentTime
+			#log my.audio.currentTime
 			return if my._draggingseekbar
 			v = my.audio.currentTime / my._curplaying.length * 100
 			my.seekbar.setpos v

@@ -8,7 +8,6 @@ import sys, os
 import nordavind
 
 nordavind._root = os.path.dirname(os.path.realpath(sys.argv[0]))
-nordavind.start()
 
 walkdir = nordavind.config['musicpath']
 if len(sys.argv) > 1:
@@ -29,8 +28,9 @@ for root, dirs, files in os.walk(walkdir):
 			print('Error with %s/%s' % (root, f))
 			raise
 
-c = nordavind._db.cursor()
+db = nordabind.openDb()
+c = db.cursor()
 for track in c.execute('select * from tracks').fetchall():
 	if not os.path.exists(track['path']):
 		c.execute('delete from tracks where id=?', (track['id'],))
-nordavind._db.commit()
+db.commit()

@@ -15,22 +15,25 @@ import taglib
 
 _root = os.path.dirname(os.path.realpath(sys.argv[0]))
 _wwwroot = ''
-_db = None
 _procs = {}
 config = None
 
 
 def openDb():
-	global _db
-	_db = sqlite3.connect(config['dbpath'],
+	db = sqlite3.connect(config['dbpath'],
 		detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+
+	if len(db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
+		createDb()
 
 	def dict_factory(cursor, row):
 		d = {}
 		for i, col in enumerate(cursor.description):
 			d[col[0]] = row[i]
 		return d
-	_db.row_factory = dict_factory
+	db.row_factory = dict_factory
+
+	return db
 
 
 def template(f, v):
@@ -41,7 +44,8 @@ def template(f, v):
 
 
 def createDb():
-	c = _db.cursor()
+	db = openDb()
+	c = db.cursor()
 
 	c.execute('''create table artists (
 		id integer primary key autoincrement,
@@ -73,11 +77,13 @@ def createDb():
 	c.execute('create unique index uniquepath on tracks (path)')
 	c.execute('create unique index uniquealbum on albums (artist, name)')
 
-	_db.commit()
+	db.commit()
 
 
 def addOrUpdateTrack(path):
-	c = _db.cursor()
+	db = openDb()
+	c = db.cursor()
+
 	track = c.execute('select * from tracks where path = ?',
 		(path,)).fetchone()
 
@@ -125,7 +131,7 @@ def addOrUpdateTrack(path):
 		c.execute('''update tracks set name = ?, trackno = ?, discno = ?, length = ? where id = ?''',
 			(tags.get('title'), tags.get('tracknumber'), tags.get('discnumber'), tags.get('length'), track['id']))
 
-	_db.commit()
+	db.commit()
 
 
 def getTags(path):
@@ -144,7 +150,7 @@ def getTags(path):
 
 
 def getLibrary():
-	c = _db.cursor()
+	c = openDb().cursor()
 
 	r = []
 	for a in c.execute('select * from artists order by name').fetchall():
@@ -159,7 +165,7 @@ def getLibrary():
 
 def playTrack(codec, id):
 	global _procs
-	c = _db.cursor()
+	c = openDb().cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
 
 	cache = None
@@ -220,7 +226,7 @@ def playTrack_clean(id):
 
 
 def getAlbum(id):
-	c = _db.cursor()
+	c = openDb().cursor()
 
 	album = c.execute('select * from albums where id=?', (id,)).fetchone()
 	artist = c.execute('select * from artists where id=?', (album['artist'],)).fetchone()
@@ -243,7 +249,7 @@ def getAlbum(id):
 
 
 def getAlbumByTrack(id):
-	c = _db.cursor()
+	c = openDb().cursor()
 	return getAlbum(c.execute('select * from tracks where id=?',
 		(id,)).fetchone()['album'])
 
@@ -256,13 +262,6 @@ def cleanCache(trackid):
 	for c in cache: os.unlink(c)
 
 
-def start():
-	openDb()
-	if len(_db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
-		createDb()
-
-	if config.get('cachepath') not in [None, False, ''] and not os.path.exists(config['cachepath']):
-		os.makedirs(config['cachepath'])
 
 config = {}
 for line in open('config.cfg').readlines():
@@ -279,7 +278,9 @@ for line in open('config.cfg').readlines():
 		v = '%s/%s' % (_root, v)
 
 	config[k] = v
-	
+
+if config.get('cachepath') not in [None, False, ''] and not os.path.exists(config['cachepath']):
+	os.makedirs(config['cachepath'])
 
 
 
