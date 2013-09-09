@@ -54,8 +54,6 @@ class AgentCooper:
 
 	@cherrypy.expose
 	def play_track(codec, trackid):
-		nordavind.start()
-
 		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
 		cherrypy.request.hooks.attach('on_end_request',
 			lambda: nordavind.playTrack_clean(trackid), True)
