@@ -1,0 +1,14 @@
+<ol>
+	{% for artist in library %}
+		<li class="artist" data-id="{{ artist.id }}">
+			<i class="icon-expand-alt"></i>
+			<span>{{ artist.name|e }}</span>
+		</li>
+
+		{% for album in artist.albums %}
+			<li class="album" data-id={{ album.id }}>
+				<span>{{ album.released }} {{ album.name|e }}</span>
+			</li>
+		{% endfor %}
+	{% endfor %}
+</ol>

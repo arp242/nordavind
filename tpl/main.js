@@ -106,10 +106,16 @@
   };
 
   window.setSize = function() {
+    var _ref;
+
     $('#library ol').css('height', "" + ($(window).height() - $('#library ol').offset().top) + "px");
-    $('.seekbar').css('width', "" + ($('#player').width() - $('.volume').outerWidth() - $('.volume').position().left - 30) + "px");
+    $('.seekbar').css('width', ($('#player').width() - $('.volume').outerWidth() - $('.volume').position().left - $('.buttons-right').outerWidth() - 30) + 'px');
     $('#playlist-wrapper').css('bottom', "" + ($('#info').height() + $('#status').height() + 3) + "px");
-    return $('#info .table-wrapper').width($('#info').width() - $('#info img').width() - 20);
+    $('#info .table-wrapper').width($('#info').width() - $('#info img').width() - 20);
+    $('#playlist-thead').css('left', "" + ($('#playlist').offset().left) + "px");
+    if (((_ref = window.playlist) != null ? _ref.headSize : void 0) != null) {
+      return window.playlist.headSize();
+    }
   };
 
   initGlobalKeys = function() {
@@ -161,6 +167,7 @@
   $(document).ready(function() {
     $('input').val('');
     store.init('playlist', []);
+    store.init('replaygain', 'album');
     setSize();
     window.library = new Library();
     window.playlist = new Playlist();
@@ -171,6 +178,7 @@
     initGlobalKeys();
     setSize();
     $(window).on('resize', setSize);
+    window.playlist.headSize();
     if (store.get('lasttrack') != null) {
       return window.playlist.playRow($("#playlist tr[data-id=" + (store.get('lasttrack')) + "]"));
     }

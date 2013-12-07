@@ -103,9 +103,18 @@ window.setSize = ->
 	# We need a fixed height for the scrollbar to work
 	$('#library ol').css 'height', "#{$(window).height() - $('#library ol').offset().top}px"
 
-	$('.seekbar').css 'width', "#{$('#player').width() - $('.volume').outerWidth() - $('.volume').position().left - 30}px"
+	$('.seekbar').css 'width', (
+		$('#player').width() -
+		$('.volume').outerWidth() -
+		$('.volume').position().left -
+		$('.buttons-right').outerWidth() -
+		30
+	) + 'px'
 	$('#playlist-wrapper').css 'bottom', "#{$('#info').height() + $('#status').height() + 3}px"
 	$('#info .table-wrapper').width $('#info').width() - $('#info img').width() - 20
+
+	$('#playlist-thead').css 'left', "#{$('#playlist').offset().left}px"
+	window.playlist.headSize() if window.playlist?.headSize?
 
 
 initGlobalKeys = ->
@@ -149,6 +158,7 @@ $(document).ready ->
 	$('input').val ''
 
 	store.init 'playlist', []
+	store.init 'replaygain', 'album'
 
 	setSize()
 
@@ -163,6 +173,7 @@ $(document).ready ->
 
 	setSize()
 	$(window).on 'resize', setSize
+	window.playlist.headSize()
 
 	window.playlist.playRow $("#playlist tr[data-id=#{store.get('lasttrack')}]") if store.get('lasttrack')?
 

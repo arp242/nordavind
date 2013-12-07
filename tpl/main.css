@@ -33,14 +33,18 @@
   background-image: -o-linear-gradient(top, #eaeaea, #f7f7f7);
   background-image: linear-gradient(to bottom, #eaeaea, #f7f7f7);
   background-repeat: repeat-x;
-  border-bottom: 1px solib #b7b7b7;
-  box-shadow: 4px 0px 4px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid #b7b7b7;
+  box-shadow: 2px 0px 2px rgba(0, 0, 0, 0.4);
 }
 /*** Defaults ***/
 html,
 body {
   height: 100%;
   overflow: hidden;
+}
+fieldset {
+  border: 1px solid #aaa;
+  border-radius: 2px;
 }
 /*** Layout & positions ***/
 #library {
@@ -157,8 +161,8 @@ body {
   background-image: -o-linear-gradient(top, #eaeaea, #f7f7f7);
   background-image: linear-gradient(to bottom, #eaeaea, #f7f7f7);
   background-repeat: repeat-x;
-  border-bottom: 1px solib #b7b7b7;
-  box-shadow: 4px 0px 4px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid #b7b7b7;
+  box-shadow: 2px 0px 2px rgba(0, 0, 0, 0.4);
 }
 #library #search input {
   border: 1px solid #b7b7b7;
@@ -182,8 +186,8 @@ body {
   background-image: -o-linear-gradient(top, #eaeaea, #f7f7f7);
   background-image: linear-gradient(to bottom, #eaeaea, #f7f7f7);
   background-repeat: repeat-x;
-  border-bottom: 1px solib #b7b7b7;
-  box-shadow: 4px 0px 4px rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid #b7b7b7;
+  box-shadow: 2px 0px 2px rgba(0, 0, 0, 0.4);
 }
 #player .btn {
   margin-right: 5px;
@@ -213,6 +217,9 @@ body {
 #player.paused .pause,
 #player.stopped .pause {
   display: none;
+}
+#player .buttons-right {
+  margin-right: 4px;
 }
 /*** Info ***/
 #info .table-wrapper {
@@ -254,27 +261,10 @@ body {
   right: 2px;
 }
 #playlist thead {
-  background-color: #eee;
-  cursor: default;
+  visibility: hidden;
 }
 #playlist tbody tr {
   cursor: default;
-}
-#playlist th {
-  padding: 1px 0;
-  border: 1px solid #bbb;
-  padding-left: 4px;
-}
-#playlist th span {
-  margin-right: 8px;
-}
-#playlist th i {
-  font-size: 14px;
-  line-height: 14px;
-  margin-left: 8px;
-  color: #666;
-  position: relative;
-  top: 1px;
 }
 #playlist td {
   padding: 0;
@@ -442,10 +432,10 @@ tr.active {
 }
 #large-cover {
   position: absolute;
-  left: 0px;
   right: 0px;
-  top: 0px;
   bottom: 20px;
+  height: 0px;
+  width: 0px;
   z-index: 100;
 }
 #large-cover img {
@@ -456,4 +446,86 @@ tr.active {
   bottom: 0px;
   box-shadow: -2px -2px 2px rgba(0, 0, 0, 0.05);
   border-top-left-radius: 1px;
+}
+#dialog {
+  position: fixed;
+  top: -150px;
+  left: 50%;
+  z-index: 100;
+  opacity: 0;
+  background-color: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.05);
+  min-height: 200px;
+  width: 600px;
+  margin-left: -300px;
+}
+#dialog .content {
+  padding: 10px;
+}
+#dialog .buttons {
+  background-color: #e5e5e5;
+  border-top: 1px solid #cdcdcd;
+  position: absolute;
+  bottom: 0;
+  left: -1px;
+  right: -1px;
+  text-align: right;
+  padding: 5px;
+}
+#dialog .lastfm .btn {
+  display: none;
+}
+#dialog .lastfm-enabled .disable-lastfm {
+  display: block;
+}
+#dialog .lastfm-disabled .enable-lastfm {
+  display: block;
+}
+#dialog .lastfm-loading .loading-lastfm {
+  display: block;
+}
+#backdrop {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #000;
+  opacity: 0;
+  z-index: 90;
+}
+#playlist-thead {
+  cursor: default;
+  position: fixed;
+  left: 322px;
+  right: 20px;
+  border: 1px solid #a1a1a1;
+  border-bottom: 1px solid #cdcdcd;
+  background-color: #e6e6e6;
+  background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+}
+#playlist-thead .cell {
+  display: inline-block;
+  padding-left: 5px;
+  float: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+}
+#playlist-thead .cell span {
+  margin-right: 8px;
+}
+#playlist-thead .cell i {
+  font-size: 14px;
+  line-height: 14px;
+  margin-left: 8px;
+  color: #666;
+  position: relative;
+  top: 1px;
 }

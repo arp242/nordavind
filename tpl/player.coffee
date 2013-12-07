@@ -10,6 +10,7 @@ window.Player = class Player
 	_curplaying:
 		trackId: null
 		length: 1
+		start: 0
 
 	_bufstart: null
 	_draggingseekbar: false
@@ -28,6 +29,8 @@ window.Player = class Player
 	###
 	initMouse: ->
 		my = this
+
+		$('#player').on 'click', '.settings', window.showSettings
 
 		$('#player').on 'click', '.play', (e) ->
 			if isNaN(my.audio.duration)
@@ -61,17 +64,14 @@ window.Player = class Player
 		window.vol = new Slider
 			target: $('#player .volume')
 			move: (pos) ->
-				v = Math.min 1, pos * 2 / 100
-				my.audio.volume = v
-				store.set 'volume', v
+				#v = Math.min 100, pos * 2
+				my.setVol pos
 				return Math.round pos
 
 		if store.get('volume') isnt null
-			my.audio.volume = store.get 'volume'
-			vol.setpos my.audio.volume * 100
+			my.setVol store.get('volume')
 		else
-			vol.setpos 50
-			my.audio.volume = 0.5
+			my.setVol 50
 
 
 	###
@@ -106,6 +106,19 @@ window.Player = class Player
 		$(@audio).bind 'ended', ->
 			$('.seekbar .buffer').css 'width', '0px'
 			my._bufstart = null
+
+			if my._curplaying.length > 30
+				[track, album, artist] = window.info.getInfo my._curplaying.trackId
+				if track
+					window.scrobble.scrobble
+						#mbid: track.mbid
+						timestamp: my._curplaying.start
+						artist: artist.name
+						album: album.name
+						track: track.name
+						trackNumber: track.trackno
+						duration: track.length
+
 			unless my.playNext()
 				$('#player').attr 'class', 'right-of-library stopped'
 				store.set 'lasttrack', null
@@ -113,7 +126,6 @@ window.Player = class Player
 				$('#status span:eq(0)').html 'Stopped'
 
 		$(@audio).bind 'timeupdate', (e) ->
-			#log my.audio.currentTime
 			return if my._draggingseekbar
 			v = my.audio.currentTime / my._curplaying.length * 100
 			my.seekbar.setpos v
@@ -159,16 +171,27 @@ window.Player = class Player
 		@audio.pause()
 		@audio.src = ''
 		@audio.src = "#{_root}/play-track/#{@codec}/#{trackId}"
-		@audio.play()
 
 		@_curplaying =
 			trackId: trackId
 			length: length
+			start: (new Date().getTime() / 1000).toNum() + new Date().getTimezoneOffset()
+		@setVol()
+		@audio.play()
 
 		row = $("#playlist tr[data-id=#{trackId}]")
 		$('#playlist tr').removeClass 'playing'
 		row.addClass('playing').find('td:eq(0)').html '<i class="icon-play"></i>'
 		store.set 'lasttrack', trackId
+
+		[track, album, artist] = window.info.getInfo trackId
+		if track
+			window.scrobble.nowPlaying
+				artist: artist.name
+				album: album.name
+				track: track.name
+				trackNumber: track.trackno
+				duration: track.length
 
 
 	###
@@ -183,7 +206,31 @@ window.Player = class Player
 		else
 			return false
 
+
 	###
 	Try and play the previous track
 	###
 	playPrev: -> @playNext true
+
+
+	###
+	Set volume in percentage (0-100) & adjust for replaygain
+	If the volume is null, we'll set it to the current volume, but re-apply
+	replaygain (do this when switching tracks)
+	###
+	setVol: (v=null) ->
+		v = store.get('volume') if v is null
+		store.set 'volume', v
+
+		scale = 1
+		if @_curplaying.trackId
+			rg = false
+			apply = store.get 'replaygain'
+			if apply is 'album'
+				rg = window._cache.albums[window._cache.tracks[@_curplaying.trackId].album].rg_gain
+			else if apply is 'track'
+				rg = window._cache.tracks[@_curplaying.trackId].rg_gain
+			scale = Math.pow(10, rg / 20) if rg
+
+		@audio.volume = v * scale / 100
+		window.vol.setpos store.get('volume')

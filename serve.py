@@ -39,6 +39,22 @@ class AgentCooper:
 
 
 	@cherrypy.expose
+	def get_settings():
+		return nordavind.template('settings.html', {
+		})
+
+
+	@cherrypy.expose
+	def lastfm_callback(token=None):
+		return '''
+			<html><head></head></html><body>
+			<script>localStorage.setItem('token', '%s'); window.close()</script>
+			You can close this window
+			</body></html>
+		''' % (token,)
+
+
+	@cherrypy.expose
 	def get_album(albumid):
 		dbcache()
 		return json.dumps(nordavind.getAlbum(albumid),
@@ -55,8 +71,8 @@ class AgentCooper:
 	@cherrypy.expose
 	def play_track(codec, trackid):
 		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
-		cherrypy.request.hooks.attach('on_end_request',
-			lambda: nordavind.playTrack_clean(trackid), True)
+		#cherrypy.request.hooks.attach('on_end_request',
+		#	lambda: nordavind.playTrack_clean(trackid), True)
 		return nordavind.playTrack(codec, trackid)
 	play_track._cp_config = {'response.stream': True}
 

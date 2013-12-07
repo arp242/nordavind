@@ -7,23 +7,23 @@
 # See below for full copyright
 #
 
-import os, re, sys, urllib.parse, sqlite3, shlex, subprocess, base64, glob
+import os, re, sys, urllib.parse, sqlite3, base64, glob
 
-from jinja2 import Environment, FileSystemLoader
 import taglib
+
+import nordavind.audio
 
 
 _root = os.path.dirname(os.path.realpath(sys.argv[0]))
 _wwwroot = ''
-_procs = {}
 config = None
 
 
-def openDb():
+def openDb(create=True):
 	db = sqlite3.connect(config['dbpath'],
 		detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 
-	if len(db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
+	if create and len(db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
 		createDb()
 
 	def dict_factory(cursor, row):
@@ -37,6 +37,8 @@ def openDb():
 
 
 def template(f, v):
+	from jinja2 import Environment, FileSystemLoader
+
 	env = Environment(loader=FileSystemLoader('%s/tpl' % _root))
 	env.filters['urlencode'] = lambda s: urllib.parse.quote_plus(s, '')
 
@@ -44,7 +46,7 @@ def template(f, v):
 
 
 def createDb():
-	db = openDb()
+	db = openDb(False)
 	c = db.cursor()
 
 	c.execute('''create table artists (
@@ -60,6 +62,8 @@ def createDb():
 		numdiscs int,
 		numtracks int,
 		cover text,
+		rg_gain real,
+		rg_peak real,
 		foreign key(artist) references artists(id) on delete cascade
 	)''')
 
@@ -71,6 +75,8 @@ def createDb():
 		discno int,
 		length int,
 		path text not null,
+		rg_gain real,
+		rg_peak real,
 		foreign key(album) references albums(id) on delete cascade
 	)''')
 
@@ -88,6 +94,7 @@ def addOrUpdateTrack(path):
 		(path,)).fetchone()
 
 	tags = getTags(path)
+
 	# Add track
 	if track is None:
 		album = c.execute('select * from albums where name = ?',
@@ -118,14 +125,17 @@ def addOrUpdateTrack(path):
 				else:
 					cover = None
 
-			c.execute('insert into albums (artist, name, released, cover, numtracks, numdiscs) values(?, ?, ?, ?, ?, ?)',
-				(artist, tags.get('album'), tags.get('date', '').split('-')[0], cover, tags.get('tracktotal'), tags.get('disctotal')))
+			c.execute('''insert into albums (artist, name, released, cover, numtracks, numdiscs, rg_gain, rg_peak)
+				values(?, ?, ?, ?, ?, ?, ?, ?)''',
+				(artist, tags.get('album'), tags.get('date', '').split('-')[0], cover, tags.get('tracktotal'),
+				tags.get('disctotal'), float(tags.get('replaygain_album_gain', '0').replace('dB', '')), float(tags.get('replaygain_album_peak', 0))))
 			album = c.lastrowid
 		else:
 			album = album['id']
 
-		c.execute('insert into tracks (path, name, album, trackno, discno, length) values (?, ?, ?, ?, ?, ?)',
-			(path, tags.get('title'), album, tags.get('tracknumber'), tags.get('discnumber'), tags.get('length')))
+		c.execute('insert into tracks (path, name, album, trackno, discno, length, rg_gain, rg_peak) values (?, ?, ?, ?, ?, ?, ?, ?)',
+			(path, tags.get('title'), album, tags.get('tracknumber'), tags.get('discnumber'), tags.get('length'),
+			float(tags.get('replaygain_track_gain', '0').replace('dB', '')), float(tags.get('replaygain_track_peak', 0))))
 	# Update track
 	else:
 		c.execute('''update tracks set name = ?, trackno = ?, discno = ?, length = ? where id = ?''',
@@ -135,11 +145,10 @@ def addOrUpdateTrack(path):
 
 
 def getTags(path):
-	r = {}
-	# Sometimes this prints a (harmless) warning, AFAIK this can't be disabled
-	# :-/
+	# Sometimes this prints a (harmless) warning, AFAIK this can't be disabled :-/
 	f = taglib.File(path)
 
+	r = {}
 	for k, v in f.tags.items():
 		if k in ['DISCNUMBER', 'TRACKNUMBER']:
 			v = [v[0].split('/')[0]]
@@ -164,7 +173,6 @@ def getLibrary():
 	return r
 
 def playTrack(codec, id):
-	global _procs
 	c = openDb().cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
 
@@ -179,50 +187,16 @@ def playTrack(codec, id):
 			if not buf: break
 			yield buf
 	else:
-		path = track['path']
-		t = path.split('.').pop()
-
-		if codec == 'ogg':
-			if t == 'flac':
-				cmd = 'flac -sd %s -o -| oggenc - -q8 -Qo -' % shlex.quote(path)
-			elif t == 'mp3':
-				cmd = 'mpg123 -qw- %s| oggenc - -q8 -Qo -' % shlex.quote(path)
-			elif t == 'ogg':
-				cmd = 'cat %s' % shlex.quote(path)
-				cache = None
-		elif codec == 'mp3':
-			if t == 'flac':
-				cmd = 'flac -sd %s -o -| lame --quiet -V2 - -' % shlex.quote(path)
-			elif t == 'ogg':
-				cmd = 'oggdec -Qo- %s | lame --quiet -V2 - -' % shlex.quote(path)
-			elif t == 'mp3':
-				cmd = 'cat %s' % shlex.quote(path)
-				cache = None
-
-		_procs[id] = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-
 		if cache is not None:
 			cachefp = open(cache + '_temp', 'wb')
-
-		while True:
-			buf = _procs[id].stdout.read(1024)
-			if not buf: break
+		
+		for buf in nordavind.audio.convert(track['path'], codec):
 			if cache is not None: cachefp.write(buf)
 			yield buf
 
-		del _procs[id]
 		if cache is not None:
 			cachefp.close()
 			os.rename(cache + '_temp', cache)
-
-
-def playTrack_clean(id):
-	global _procs
-
-	if _procs.get(id):
-		cleanCache(id)
-		_procs.get(id).kill()
-		del _procs[id]
 
 
 def getAlbum(id):

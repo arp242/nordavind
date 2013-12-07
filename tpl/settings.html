@@ -1,0 +1,27 @@
+<fieldset class="lastfm">
+	<legend>Last.fm</legend>
+
+	<button class="enable-lastfm btn"><i class="icon-music"></i> Enable Last.fm scrobbling</button>
+	<button class="disable-lastfm btn"><i class="icon-music"></i> Disable Last.fm scrobbling (enabled for ‘%user%’)</button>
+	<button class="loading-lastfm btn disabled"><i class="icon-spinner icon-spin"></i> Waiting for authorization…</button>
+</fieldset>
+
+
+<fieldset class="replaygain">
+	<legend>ReplayGain</legend>
+
+	<div>
+		<input type="radio" name="replaygain" value="disable" id="disable-replaygain">
+		<label for="disable-replaygain">Disable ReplayGain</label>
+	</div>
+
+	<div>
+		<input type="radio" name="replaygain" value="album" id="album-replaygain">
+		<label for="album-replaygain">Apply ReplayGain per album</label>
+	</div>
+
+	<div>
+		<input type="radio" name="replaygain" value="track" id="track-replaygain">
+		<label for="track-replaygain">Apply ReplayGain per track</label>
+	</div>
+</fieldset>

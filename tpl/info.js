@@ -21,11 +21,46 @@
           return;
         }
         $('body').append("<div id='large-cover'>\n	<img src='" + (img.attr('src')) + "' alt=''>\n</div>");
+        $('#large-cover').css({
+          width: "" + (img.width()) + "px",
+          height: "" + (img.height()) + "px"
+        }).animate({
+          width: '100%',
+          height: '100%'
+        }, {
+          duration: 500
+        });
         return $('#large-cover').one('click', function(e) {
-          return $(this).remove();
+          var _this = this;
+
+          return $(this).animate({
+            width: "" + (img.width()) + "px",
+            height: "" + (img.height()) + "px"
+          }, {
+            complete: function() {
+              return $(_this).remove();
+            },
+            duration: 500
+          });
         });
       });
     }
+
+    /*
+    */
+
+
+    Info.prototype.getInfo = function(trackId) {
+      var album, artist, track;
+
+      track = _cache.tracks[trackId];
+      if (track == null) {
+        return [null, null, null];
+      }
+      album = _cache.albums[track.album];
+      artist = _cache.artists[album.artist];
+      return [track, album, artist];
+    };
 
     /*
     */

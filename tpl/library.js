@@ -85,6 +85,7 @@
             save.push(row);
           }
           $('#playlist-wrapper').scrollbar('update');
+          window.playlist.headSize();
           return store.set('playlist', store.get('playlist').concat(save));
         }
       });

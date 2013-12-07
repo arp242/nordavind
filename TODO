@@ -1,13 +1,9 @@
-- Improve row selection in playlist
 - Gapless playback
-- ReplayGain
-- last.fm
+- Deal with high-res cover art
 
 
 A TODO list :-)
 
-- Control config.cfg from browser
-- Add various options to config.cfg
 - Select multiple rows in playlist with the mouse
 - Test (& fix) various browsers
 - Actually deal with various errors that may occur

@@ -28,7 +28,7 @@ for root, dirs, files in os.walk(walkdir):
 			print('Error with %s/%s' % (root, f))
 			raise
 
-db = nordabind.openDb()
+db = nordavind.openDb()
 c = db.cursor()
 for track in c.execute('select * from tracks').fetchall():
 	if not os.path.exists(track['path']):

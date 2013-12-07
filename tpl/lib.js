@@ -2,24 +2,50 @@
 (function() {
   var Slider;
 
+  window.log = function() {
+    if ((typeof console !== "undefined" && console !== null ? console.log : void 0) != null) {
+      return console.log.apply(console, arguments);
+    }
+  };
+
+  window.$$ = function(s) {
+    return $(s).toArray();
+  };
+
+  String.prototype.toNum = function() {
+    return parseInt(this, 10);
+  };
+
+  Number.prototype.toNum = function() {
+    return parseInt(this, 10);
+  };
+
+  jQuery.fn.replaceHTML = function(s, r) {
+    return this.html(this.html().replace(s, r));
+  };
+
   Function.prototype.timeout = function(time, args) {
     var _this = this;
 
-    return setTimeout(function() {
+    return this.timeoutId = setTimeout(function() {
       return _this.apply(_this, args);
     }, time);
+  };
+
+  Function.prototype.clearTimeout = function() {
+    return clearTimeout(this.timeoutId);
   };
 
   Function.prototype.interval = function(time, args) {
     var _this = this;
 
-    return setInterval(function() {
+    return this.intervalId = setInterval(function() {
       return _this.apply(_this, args);
     }, time);
   };
 
-  String.prototype.toNum = function() {
-    return parseInt(this, 10);
+  Function.prototype.clearInterval = function() {
+    return clearInterval(this.intervalId);
   };
 
   String.prototype.quote = function() {
@@ -58,22 +84,15 @@
     return this.findNext(sel, num, true);
   };
 
-  window.log = function() {
-    if ((typeof console !== "undefined" && console !== null ? console.log : void 0) != null) {
-      return console.log.apply(console, arguments);
-    }
-  };
-
-  window.$$ = function(s) {
-    return $(s).toArray();
-  };
-
   window.store = {
     get: function(k) {
       return JSON.parse(localStorage.getItem(k));
     },
     set: function(k, v) {
       return localStorage.setItem(k, JSON.stringify(v));
+    },
+    del: function(k) {
+      return localStorage.removeItem(k);
     },
     init: function(k, v) {
       if (!localStorage.getItem(k)) {
@@ -91,7 +110,7 @@
   };
 
   window.babyUrADrag = function(handle, start, move, end) {
-    var dragging, mousedown, mousemove, mouseup;
+    var dragging, mousedown, mousemove, mouseup, origzindex;
 
     dragging = false;
     mousemove = function(e) {
@@ -101,6 +120,7 @@
       setSize();
       return move != null ? move.apply(this, [e]) : void 0;
     };
+    origzindex = $(handle).css('z-index');
     mousedown = function(e) {
       handle.addClass('dragging');
       dragging = true;
@@ -112,6 +132,7 @@
     mouseup = function(e) {
       handle.removeClass('dragging');
       dragging = false;
+      $(handle).css('z-index', origzindex);
       return end != null ? end.apply(this, [e]) : void 0;
     };
     handle.on('mousedown', mousedown);

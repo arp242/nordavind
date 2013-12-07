@@ -72,6 +72,7 @@ window.Library = class Library
 					pl.append row
 					save.push row
 				$('#playlist-wrapper').scrollbar 'update'
+				window.playlist.headSize()
 				store.set 'playlist', store.get('playlist').concat save
 
 

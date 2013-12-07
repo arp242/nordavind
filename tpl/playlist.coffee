@@ -73,8 +73,9 @@ window.Playlist = class Playlist
 	###
 	Clear all selection
 	###
-	clearSelection: ->
-		$('#playlist tr').removeClass('selected').removeClass 'active'
+	clearSelection: (active=false) ->
+		$('#playlist tr').removeClass 'selected'
+		$('#playlist .active').removeClass 'active' if active
 
 
 	###
@@ -82,7 +83,7 @@ window.Playlist = class Playlist
 	###
 	playRow: (r) ->
 		window.player.play $(r).attr('data-id'), $(r).attr('data-length')
-		@clearSelection()
+		@clearSelection true
 		@selectRow r
 
 
@@ -134,6 +135,13 @@ window.Playlist = class Playlist
 				window.info.clear()
 				my.savePlaylist()
 				my.cleanCache()
+
+				# Hack to prevent a seemingly empty playlist, this should be fixed better
+				# (this is a problem with perfect scrollbar, the update function should
+				# do this
+				if $('#playlist tr:last').position().top < 15
+					$('#playlist-wrapper')[0].scrollTop = 0
+					$('#playlist-wrapper').scrollbar 'update'
 			# Up arrow
 			else if e.keyCode is 38
 				e.preventDefault()
@@ -221,14 +229,14 @@ window.Playlist = class Playlist
 		my = this
 
 		sort = null
-		$('#playlist thead').on 'click', 'th', (e) ->
+		$('#playlist-thead').on 'click', '.cell', (e) ->
 			h = $(this)
 
 			psort = null
-			if $('#playlist thead').find('.icon-sort-up').length > 0
-				psort = $('#playlist thead').find('.icon-sort-up').parent()
-			else if $('#playlist thead').find('.icon-sort-down').length > 0
-				psort = $('#playlist thead').find('.icon-sort-down').parent()
+			if $('#playlist-thead').find('.icon-sort-up').length > 0
+				psort = $('#playlist-thead').find('.icon-sort-up').parent()
+			else if $('#playlist-thead').find('.icon-sort-down').length > 0
+				psort = $('#playlist-thead').find('.icon-sort-down').parent()
 
 			psort = null if psort and h[0] is psort[0]
 
@@ -294,6 +302,8 @@ window.Playlist = class Playlist
 	###
 	savePlaylist: ->
 		store.set 'playlist', $$('#playlist tbody tr').map (r) -> r.outerHTML
+		$('#playlist-wrapper').scrollbar 'update'
+		@headSize()
 
 
 	###
@@ -336,3 +346,13 @@ window.Playlist = class Playlist
 				type: 'post'
 				data:
 					tracks: deleted.join ','
+
+
+	###
+	###
+	headSize: ->
+		$('#playlist thead th').each (i, cell) ->
+			$("#playlist-thead .cell:eq(#{i})").css 'width', "#{$(cell).width() + 2}px"
+		#w = $('#playlist').width() - $('#playlist-thead').width()
+		w = $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth())
+		$('#playlist-thead > .cell:last').css 'width', "+=#{w}px"

@@ -21,19 +21,7 @@
 					<input placeholder="Filter (artist/album)" />
 				</div>
 			</div>
-			<ol>
-				{% for artist in library %}
-					<li class="artist" data-id="{{ artist.id }}">
-						<i class="icon-expand-alt"></i>
-						<span>{{ artist.name|e }}</span>
-					</li>
-					{% for album in artist.albums %}
-						<li class="album" data-id={{ album.id }}>
-							<span>{{ album.released }} {{ album.name|e }}</span>
-						</li>
-					{% endfor %}
-				{% endfor %}
-			</ol>
+			{% include "library.html" %}
 			<div class="resize-handle resize-horizontal"></div>
 		</div>
 
@@ -50,17 +38,45 @@
 
 			<span class="volume"></span>
 			<span class="seekbar"><span class="buffer"></span></span>
+
+			<span class="buttons-right">
+				<button class="btn btn-small settings"><i class="icon-wrench"></i></button>
+			</span>
 		</div>
 
 		<div id="playlist-wrapper" class="right-of-library pane">
+			{# Making the <thead> behave in the way I wanted it proved to be impossible, so we fake it #}
+			<div id="playlist-thead">
+				<span class="cell play-icon" title="Playing">
+					<span>Playing</span>
+					<i></i>
+				</span>
+				<span class="cell trackno" title="Disc number.Track number" data-sort="numeric">
+					<span>Disc number.Track number</span>
+					<i></i>
+				</span>
+				<span class="cell artist-album" title="Artist / Album">
+					<span>Artist / Album</span>
+					<i></i>
+				</span>
+				<span class="cell title" title="Title">
+					<span>Title</span>
+					<i></i>
+				</span>
+				<span class="cell length" title="Length" data-sort="numeric">
+					<span>Length</span>
+					<i></i>
+				</span>
+			</div>
+
 			<table id="playlist" class="table table-condensed table-striped">
 				<thead>
 					<tr>
-						<th class="play-icon" title="Playing"><span></span><i></i></th>
-						<th class="trackno" title="Disc number.Track number" data-sort="numeric"><span></span><i></i></th>
-						<th class="artist-album" title="Artist / Album"><span>Artist / Album</span><i></i></th>
-						<th class="title" title="Title"><span>Title</span><i></i></th>
-						<th class="length" title="Length" data-sort="numeric"><span></span><i></i></th>
+						<th class="play-icon">a</th>
+						<th class="trackno">a</th>
+						<th class="artist-album">a</th>
+						<th class="title">a</th>
+						<th class="length">a</th>
 					</tr>
 				</thead>
 
@@ -85,18 +101,21 @@
 			<span>Stopped</span>
 			<span></span>
 			<span></span>
-			<a href="http://code.arp242.net/nordavind">Nordavind {{ version }}</a>
+			<a href="http://code.arp242.net/nordavind"><i class="icon-bitbucket"></i> Nordavind {{ version }}</a>
 		</div>
 
 		<script src="/tpl/jquery.js?v={{ version }}"></script>
 		<script src="/tpl/jquery.mousewheel.js?v={{ version }}"></script>
 		<script src="/tpl/scrollbar.js?v={{ version }}"></script>
+		<script src="/tpl/md5.js?v={{ version }}"></script>
 
 		<script src="/tpl/lib.js?v={{ version }}"></script>
+		<script src="/tpl/settings.js?v={{ version }}"></script>
 		<script src="/tpl/library.js?v={{ version }}"></script>
 		<script src="/tpl/playlist.js?v={{ version }}"></script>
 		<script src="/tpl/player.js?v={{ version }}"></script>
 		<script src="/tpl/info.js?v={{ version }}"></script>
+		<script src="/tpl/scrobble.js?v={{ version }}"></script>
 
 		<script src="/tpl/main.js?v={{ version }}"></script>
 	</body>

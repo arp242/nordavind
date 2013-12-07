@@ -18,8 +18,38 @@ window.Info = class Info
 				<img src='#{img.attr 'src'}' alt=''>
 			</div>"""
 
+			$('#large-cover')
+				.css
+					width: "#{img.width()}px"
+					height: "#{img.height()}px"
+				.animate {
+					width: '100%'
+					height: '100%'
+				}, {
+					duration: 500
+				}
+
 			$('#large-cover').one 'click', (e) ->
-				$(this).remove()
+				$(this).animate {
+					width: "#{img.width()}px"
+					height: "#{img.height()}px"
+				}, {
+					complete: => $(this).remove()
+					duration: 500
+				}
+
+
+	###
+	###
+	getInfo: (trackId) ->
+		track = _cache.tracks[trackId]
+
+		return [null, null, null] unless track?
+
+		album = _cache.albums[track.album]
+		artist = _cache.artists[album.artist]
+
+		return [track, album, artist]
 
 	###
 	###

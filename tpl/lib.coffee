@@ -1,15 +1,24 @@
 # Convenient shortcuts
+window.log = -> console.log.apply console, arguments if console?.log?
+window.$$ = (s) -> $(s).toArray()
+String.prototype.toNum = -> parseInt this, 10
+Number.prototype.toNum = -> parseInt this, 10
+jQuery.fn.replaceHTML = (s, r) -> this.html(this.html().replace s, r)
+
+
 Function.prototype.timeout = (time, args) ->
-	setTimeout =>
+	this.timeoutId = setTimeout =>
 		this.apply this, args
 	, time
+Function.prototype.clearTimeout = -> clearTimeout this.timeoutId
+
 
 Function.prototype.interval = (time, args) ->
-	setInterval =>
+	this.intervalId = setInterval =>
 		this.apply this, args
 	, time
+Function.prototype.clearInterval = -> clearInterval this.intervalId
 
-String.prototype.toNum = -> parseInt this, 10
 
 # Escape HTML entities
 String.prototype.quote = ->
@@ -34,14 +43,11 @@ jQuery.fn.findNext = (sel, num=1, _prev=false) ->
 jQuery.fn.findPrev = (sel, num=1) -> this.findNext sel, num, true
 
 
-window.log = -> console.log.apply console, arguments if console?.log?
-window.$$ = (s) -> $(s).toArray()
-
-
 # localStorage wrapper
 window.store =
 	get: (k) -> JSON.parse localStorage.getItem(k)
 	set: (k, v) -> localStorage.setItem k, JSON.stringify(v)
+	del: (k) -> localStorage.removeItem k
 	init: (k, v) -> localStorage.setItem k, JSON.stringify(v) unless localStorage.getItem k
 
 
@@ -61,6 +67,7 @@ window.babyUrADrag = (handle, start, move, end) ->
 		setSize()
 		move?.apply this, [e]
 
+	origzindex = $(handle).css 'z-index'
 	mousedown = (e) ->
 		handle.addClass 'dragging'
 		dragging = true
@@ -72,6 +79,7 @@ window.babyUrADrag = (handle, start, move, end) ->
 	mouseup = (e) ->
 		handle.removeClass 'dragging'
 		dragging = false
+		$(handle).css 'z-index', origzindex
 		end?.apply this, [e]
 
 	handle.on 'mousedown', mousedown

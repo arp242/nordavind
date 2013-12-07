@@ -155,3 +155,4 @@ Nordavind includes (in whole, or code based on):
 - [jQuery](http://jquery.com/)
 - [jQuery.mousewheel](http://brandonaaron.net)
 - [Perfect Scrollbar](http://github.com/noraesae)
+- [Javascript MD5](http://pajhome.org.uk/crypt/md5/md5.html)

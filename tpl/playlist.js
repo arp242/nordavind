@@ -110,8 +110,14 @@
     */
 
 
-    Playlist.prototype.clearSelection = function() {
-      return $('#playlist tr').removeClass('selected').removeClass('active');
+    Playlist.prototype.clearSelection = function(active) {
+      if (active == null) {
+        active = false;
+      }
+      $('#playlist tr').removeClass('selected');
+      if (active) {
+        return $('#playlist .active').removeClass('active');
+      }
     };
 
     /*
@@ -121,7 +127,7 @@
 
     Playlist.prototype.playRow = function(r) {
       window.player.play($(r).attr('data-id'), $(r).attr('data-length'));
-      this.clearSelection();
+      this.clearSelection(true);
       return this.selectRow(r);
     };
 
@@ -185,7 +191,11 @@
           $('#playlist .selected').remove();
           window.info.clear();
           my.savePlaylist();
-          return my.cleanCache();
+          my.cleanCache();
+          if ($('#playlist tr:last').position().top < 15) {
+            $('#playlist-wrapper')[0].scrollTop = 0;
+            return $('#playlist-wrapper').scrollbar('update');
+          }
         } else if (e.keyCode === 38) {
           e.preventDefault();
           r = $('#playlist .active');
@@ -295,15 +305,15 @@
 
       my = this;
       sort = null;
-      return $('#playlist thead').on('click', 'th', function(e) {
+      return $('#playlist-thead').on('click', '.cell', function(e) {
         var body, dir, h, int, n, pn, psort, rows, sortFun;
 
         h = $(this);
         psort = null;
-        if ($('#playlist thead').find('.icon-sort-up').length > 0) {
-          psort = $('#playlist thead').find('.icon-sort-up').parent();
-        } else if ($('#playlist thead').find('.icon-sort-down').length > 0) {
-          psort = $('#playlist thead').find('.icon-sort-down').parent();
+        if ($('#playlist-thead').find('.icon-sort-up').length > 0) {
+          psort = $('#playlist-thead').find('.icon-sort-up').parent();
+        } else if ($('#playlist-thead').find('.icon-sort-down').length > 0) {
+          psort = $('#playlist-thead').find('.icon-sort-down').parent();
         }
         if (psort && h[0] === psort[0]) {
           psort = null;
@@ -393,9 +403,11 @@
 
 
     Playlist.prototype.savePlaylist = function() {
-      return store.set('playlist', $$('#playlist tbody tr').map(function(r) {
+      store.set('playlist', $$('#playlist tbody tr').map(function(r) {
         return r.outerHTML;
       }));
+      $('#playlist-wrapper').scrollbar('update');
+      return this.headSize();
     };
 
     /*
@@ -465,6 +477,20 @@
           }
         });
       }
+    };
+
+    /*
+    */
+
+
+    Playlist.prototype.headSize = function() {
+      var w;
+
+      $('#playlist thead th').each(function(i, cell) {
+        return $("#playlist-thead .cell:eq(" + i + ")").css('width', "" + ($(cell).width() + 2) + "px");
+      });
+      w = $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth());
+      return $('#playlist-thead > .cell:last').css('width', "+=" + w + "px");
     };
 
     return Playlist;
