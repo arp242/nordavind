@@ -9,8 +9,8 @@ For a general impression, check out the [screenshots](https://bitbucket.org/Carp
 
 Browser support
 ===============
-**Nordavind works best in Firefox**, other current browsers (Opera, Chrome, IE10)
-also work, but all experience minor issues. At the moment adding features,
+**Nordavind works best in Firefox**, other current browsers (Opera, Chrome,
+IE10) also work, but experience minor issues. At the moment adding features,
 tweaking the interface, and fixing real bugs is a higher priority than dealing
 with various browser quirks (Firefox just happens to be the only browser that
 works without fizzle).
@@ -21,7 +21,8 @@ Browsers that will *never-ever* work are Internet Explorer 8 and Safari 5.
 Audio codecs
 ------------
 Nordavid uses the HTML5 `<audio>` element, while all current browsers support
-this quite well, there are some difference, notably, in the supported codecs.
+this reasonably well, there are some difference, notably, in the supported
+codecs.
 
 - Firefox and Opera will play Ogg Vorbis files
 - Internet Explorer and Safari will play MP3 files
@@ -49,13 +50,11 @@ Dependencies
 - [Unidecode](https://pypi.python.org/pypi/Unidecode)
 - py-sqlite3 (Included in Python, sometimes a separate package)
 
-== Optional ==
+
+### Optional
 - [Pillow](https://github.com/python-imaging/Pillow) or any other PIL-compatible
   library (there are several), this is used to scale large covers to a
   reasonable size, if not installed, large covers simply won't be displayed
-
-
-### Optional
 - If you want to convert from FLAC to Ogg Vorbis: [`flac`][flac] and [`oggenc`][vorbis]
 - If you want to convert from FLAC to MP3: [`flac`][flac] and [`lame`][lame]
 - If you want to convert from MP3 to Ogg Vorbis: [`mpg123`][mpg123] and [`oggenc`][vorbis]
