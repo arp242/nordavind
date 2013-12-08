@@ -52,6 +52,8 @@
     return this.replace(/</g, '&lt').replace(/>/g, '&gt').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&apos;').replace(/\//g, '&#x2f;');
   };
 
+  String.prototype.translit = function(str) {};
+
   jQuery.fn.findNext = function(sel, num, _prev) {
     var arewe, ref;
 
@@ -86,17 +88,17 @@
 
   window.store = {
     get: function(k) {
-      return JSON.parse(localStorage.getItem(k));
+      return JSON.parse(localStorage.getItem("nordavind_" + k));
     },
     set: function(k, v) {
-      return localStorage.setItem(k, JSON.stringify(v));
+      return localStorage.setItem("nordavind_" + k, JSON.stringify(v));
     },
     del: function(k) {
-      return localStorage.removeItem(k);
+      return localStorage.removeItem("nordavind_" + k);
     },
     init: function(k, v) {
-      if (!localStorage.getItem(k)) {
-        return localStorage.setItem(k, JSON.stringify(v));
+      if (!localStorage.getItem("nordavind_" + k)) {
+        return localStorage.setItem("nordavind_" + k, JSON.stringify(v));
       }
     }
   };
@@ -210,71 +212,5 @@
     return Slider;
 
   })();
-
-  /*
-  */
-
-
-  window.selectBox = function(target) {
-    var box, dragging, startX, startY;
-
-    return;
-    target = $(target);
-    dragging = false;
-    box = null;
-    startX = 0;
-    startY = 0;
-    target.on('mousedown.selectbox', function(e) {
-      dragging = true;
-      $('body').append('<div id="selectbox"></div>');
-      box = $('#selectbox');
-      startX = e.pageX;
-      startY = e.pageY;
-      box.css({
-        left: "" + startX + "px",
-        top: "" + startY + "px"
-      });
-      document.body.focus();
-      return e.preventDefault();
-    });
-    $('body').on('mouseup.selectbox', function(e) {
-      dragging = false;
-      box.remove();
-      return box = null;
-    });
-    return $('body').on('mousemove.selectbox', function(e) {
-      var b, h, l, r, row, t, w;
-
-      if (!dragging) {
-        return;
-      }
-      row = $(e.target).closest('tr');
-      if (row.length > 0) {
-        window.playlist.selectRow(row);
-      }
-      w = $(window).width();
-      h = $(window).height();
-      if (e.pageX > startX) {
-        l = startX;
-        r = w - e.pageX;
-      } else {
-        l = e.pageX;
-        r = w - startX;
-      }
-      if (e.pageY > startY) {
-        t = startY;
-        b = h - e.pageY;
-      } else {
-        t = e.pageY;
-        b = h - startY;
-      }
-      return box.css({
-        left: l + 'px',
-        right: r + 'px',
-        top: t + 'px',
-        bottom: b + 'px'
-      });
-    });
-  };
 
 }).call(this);

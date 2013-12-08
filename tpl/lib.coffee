@@ -31,6 +31,12 @@ String.prototype.quote = ->
 		.replace(/\//g, '&#x2f;')
 
 
+
+
+# Transliterate to 7-bit ascii characters
+String.prototype.translit = (str) ->
+
+
 # Find the first element matching sel
 jQuery.fn.findNext = (sel, num=1, _prev=false) ->
 	ref = if _prev then this.prev() else this.next()
@@ -45,10 +51,10 @@ jQuery.fn.findPrev = (sel, num=1) -> this.findNext sel, num, true
 
 # localStorage wrapper
 window.store =
-	get: (k) -> JSON.parse localStorage.getItem(k)
-	set: (k, v) -> localStorage.setItem k, JSON.stringify(v)
-	del: (k) -> localStorage.removeItem k
-	init: (k, v) -> localStorage.setItem k, JSON.stringify(v) unless localStorage.getItem k
+	get: (k) -> JSON.parse localStorage.getItem("nordavind_#{k}")
+	set: (k, v) -> localStorage.setItem "nordavind_#{k}", JSON.stringify(v)
+	del: (k) -> localStorage.removeItem "nordavind_#{k}"
+	init: (k, v) -> localStorage.setItem "nordavind_#{k}", JSON.stringify(v) unless localStorage.getItem "nordavind_#{k}"
 
 
 # Formats seconds as min:sec
@@ -140,62 +146,3 @@ window.Slider = class Slider
 	# Set position as percentage 0-100
 	setpos: (p) ->
 		@handle.css 'left', "#{(@bar.width() - @handle.width()) / 100 * p}px"
-
-
-###
-###
-window.selectBox = (target) ->
-	return
-	target = $(target)
-
-	dragging = false
-	box = null
-	startX = 0
-	startY = 0
-	target.on 'mousedown.selectbox', (e) ->
-		dragging = true
-		$('body').append '<div id="selectbox"></div>'
-		box = $('#selectbox')
-
-		startX = e.pageX
-		startY = e.pageY
-
-		box.css
-			left: "#{startX}px"
-			top: "#{startY}px"
-		document.body.focus()
-		e.preventDefault()
-
-	$('body').on 'mouseup.selectbox', (e) ->
-		dragging = false
-		box.remove()
-		box = null
-
-	$('body').on 'mousemove.selectbox', (e) ->
-		return unless dragging
-
-		row = $(e.target).closest 'tr'
-		window.playlist.selectRow row if row.length > 0
-
-		w = $(window).width()
-		h = $(window).height()
-
-		if e.pageX > startX
-			l = startX
-			r = w - e.pageX
-		else
-			l = e.pageX
-			r = w - startX
-
-		if e.pageY > startY
-			t = startY
-			b = h - e.pageY
-		else
-			t = e.pageY
-			b = h - startY
-
-		box.css
-			left: l + 'px'
-			right: r + 'px'
-			top: t + 'px'
-			bottom: b + 'px'

@@ -67,6 +67,17 @@ fieldset {
 		input.invalid {
 			border-color: #f11;
 		}
+
+		.error {
+			position: absolute;
+			top: 28px;
+			right: 10px;
+			padding: 2px 5px;
+			background-color: #f00;
+			color: #fff;
+			border-radius: 2px;
+			border-top-right-radius: 0;
+		}
 	}
 }
 
@@ -306,7 +317,7 @@ fieldset {
 	}
 
 	.length {
-		width: 40px;
+		width: 48px;
 	}
 }
 
@@ -510,12 +521,7 @@ tr.active {
 	position: fixed;
 	left: 322px;
 	right: 20px;
-
-	border: 1px solid #a1a1a1;
-	border-bottom: 1px solid #cdcdcd;
-
-	background-color: #e6e6e6;
-	background-image: linear-gradient(to bottom, #fff, #e6e6e6);
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, .3);
 
 	.cell {
 		display: inline-block;
@@ -526,10 +532,16 @@ tr.active {
 		text-overflow: ellipsis;
 		white-space: nowrap;
 
-		border-top: 1px solid #fff;
-		border-left: 1px solid #fff;
-		border-right: 1px solid #808080;
-		border-bottom: 1px solid #808080;
+		background-color: #e6e6e6;
+		background-image: linear-gradient(to bottom, #fff, #e6e6e6);
+
+		border: 1px solid #ccc;
+		border-bottom-color: #b3b3b3;
+		border-left-color: #eee;
+
+		&:first-child {
+			border-left-color: #ccc;
+		}
 
 		span {
 			margin-right: 8px;

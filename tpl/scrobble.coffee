@@ -15,7 +15,7 @@ class Scrobble
 	enabled: false
 
 	constructor: ->
-		@enabled = true if window.localStorage.getItem 'lastfm'
+		@enabled = true if window.localStorage.getItem 'nordavind_lastfm'
 
 
 	###
@@ -27,9 +27,9 @@ class Scrobble
 			"&cb=#{window.location.href.replace(/\/$/, '')}/lastfm-callback"
 
 		(->
-			token = localStorage.getItem 'token'
+			token = localStorage.getItem 'nordavind_token'
 			return if token is null
-			localStorage.removeItem 'token'
+			localStorage.removeItem 'nordavind_token'
 			this.clearInterval()
 
 			my._req

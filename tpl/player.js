@@ -7,6 +7,8 @@
 
     Player.prototype.audio = $('audio')[0];
 
+    Player.prototype._nextAudio = null;
+
     Player.prototype._curplaying = {
       trackId: null,
       length: 1,
@@ -59,15 +61,7 @@
         return my.playPrev();
       });
       return $('#player').on('click', '.stop', function(e) {
-        $('.seekbar .buffer').css('width', '0px');
-        my.audio.pause();
-        $('#playlist tr').removeClass('playing');
-        my.audio.src = '';
-        $('#player').attr('class', 'right-of-library stopped');
-        store.set('lasttrack', null);
-        my._bufstart = null;
-        $('#status span').html('');
-        return $('#status span:eq(0)').html('Stopped');
+        return my.stop();
       });
     };
 
@@ -123,22 +117,37 @@
     */
 
 
-    Player.prototype.initPlayer = function() {
+    Player.prototype.initPlayer = function(audio) {
       var my;
 
+      if (audio == null) {
+        audio = null;
+      }
+      if (!audio) {
+        audio = this.audio;
+      }
       my = this;
-      $(this.audio).bind('play', function() {
+      $(audio).bind('play', function() {
+        if (!$(this).hasClass('active')) {
+          return;
+        }
         $('#player').attr('class', 'right-of-library playing');
         return $('#playlist .playing .icon-pause').attr('class', 'icon-play');
       });
-      $(this.audio).bind('pause', function() {
+      $(audio).bind('pause', function() {
+        if (!$(this).hasClass('active')) {
+          return;
+        }
         $('#player').attr('class', 'right-of-library paused');
         $('#playlist .playing .icon-play').attr('class', 'icon-pause');
         return $('#status span:eq(0)').html('Paused');
       });
-      $(this.audio).bind('ended', function() {
+      $(audio).bind('ended', function() {
         var album, artist, track, _ref;
 
+        if (!$(this).hasClass('active')) {
+          return;
+        }
         $('.seekbar .buffer').css('width', '0px');
         my._bufstart = null;
         if (my._curplaying.length > 30) {
@@ -155,35 +164,52 @@
           }
         }
         if (!my.playNext()) {
-          $('#player').attr('class', 'right-of-library stopped');
-          store.set('lasttrack', null);
-          $('#status span').html('');
-          return $('#status span:eq(0)').html('Stopped');
+          return my.stop();
         }
       });
-      $(this.audio).bind('timeupdate', function(e) {
-        var t, v;
+      $(audio).bind('timeupdate', function(e) {
+        var next, t, v;
 
+        if (!$(this).hasClass('active')) {
+          return;
+        }
         if (my._draggingseekbar) {
           return;
         }
-        v = my.audio.currentTime / my._curplaying.length * 100;
+        v = Math.min(100, my.audio.currentTime / my._curplaying.length * 100);
         my.seekbar.setpos(v);
         t = displaytime(my.audio.currentTime);
         $('#status span:eq(0)').html('Playing');
-        return $('#status span:eq(1)').html("" + t + " / " + (displaytime(my._curplaying.length)));
+        $('#status span:eq(1)').html("" + t + " / " + (displaytime(my._curplaying.length)));
+        if (my._nextAudio === null && my._curplaying.length - my.audio.currentTime < 10) {
+          next = $('#playlist .playing').next();
+          if ((next != null) && (next.attr('data-id') != null)) {
+            my._nextAudio = {
+              audio: document.createElement('audio'),
+              id: next.attr('data-id')
+            };
+            my._nextAudio.audio.preload = 'auto';
+            my._nextAudio.audio.src = "" + _root + "/play-track/" + (store.get('client')) + "/" + my.codec + "/" + (next.attr('data-id'));
+            $(my.audio).after(my._nextAudio.audio);
+            return my.initPlayer(my._nextAudio.audio);
+          }
+        }
       });
-      $(this.audio).bind('progress', function(e) {
+      return $(audio).bind('progress', function(e) {
         var c, dur, exc, r;
 
+        if (!$(this).hasClass('active')) {
+          return;
+        }
         try {
-          c = Math.round(my.audio.buffered.end(0) / my._curplaying.length * 100);
+          c = Math.min(100, Math.round(my.audio.buffered.end(0) / my._curplaying.length * 100));
         } catch (_error) {
           exc = _error;
           return;
         }
         if (c === 100) {
-          return $('#status span:eq(2)').html("Buffer " + c + "%");
+          $('#status span:eq(2)').html("Buffer " + c + "%");
+          return $('.seekbar .buffer').css('width', "" + c + "%");
         } else {
           if (!my.bufstart) {
             my.bufstart = new Date().getTime() / 1000;
@@ -191,19 +217,9 @@
           }
           dur = new Date().getTime() / 1000 - my.bufstart;
           r = (dur / c) * (100 - c);
-          return $('#status span:eq(2)').html("Buffer " + c + "% (~" + (displaytime(Math.round(r))) + "s remaining)");
+          $('#status span:eq(2)').html("Buffer " + c + "% (~" + (displaytime(Math.round(r))) + "s remaining)");
+          return $('.seekbar .buffer').css('width', "" + c + "%");
         }
-      });
-      return $(this.audio).bind('progress', function(e) {
-        var exc, v;
-
-        try {
-          v = my.audio.buffered.end(0) / my._curplaying.length * 100;
-        } catch (_error) {
-          exc = _error;
-          return;
-        }
-        return $('.seekbar .buffer').css('width', "" + v + "%");
       });
     };
 
@@ -219,9 +235,19 @@
         return alert("Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback");
       }
       this.bufstart = null;
-      this.audio.pause();
-      this.audio.src = '';
-      this.audio.src = "" + _root + "/play-track/" + this.codec + "/" + trackId;
+      if ((this._nextAudio != null) && trackId !== this._nextAudio.id) {
+        $(this._nextAudio.audio).remove();
+        this._nextAudio = null;
+      } else if (this._nextAudio != null) {
+        this.audio.remove();
+        this.audio = this._nextAudio.audio;
+        this._nextAudio = null;
+        this.audio.className = 'active';
+      } else {
+        this.audio.pause();
+        this.audio.src = '';
+        this.audio.src = "" + _root + "/play-track/" + (store.get('client')) + "/" + this.codec + "/" + trackId;
+      }
       this._curplaying = {
         trackId: trackId,
         length: length,
@@ -229,6 +255,7 @@
       };
       this.setVol();
       this.audio.play();
+      $(this.audio).trigger('progress');
       row = $("#playlist tr[data-id=" + trackId + "]");
       $('#playlist tr').removeClass('playing');
       row.addClass('playing').find('td:eq(0)').html('<i class="icon-play"></i>');
@@ -276,6 +303,29 @@
     };
 
     /*
+    	Stop playing
+    */
+
+
+    Player.prototype.stop = function() {
+      $('.seekbar .buffer').css('width', '0px');
+      this.audio.pause();
+      $('#playlist tr').removeClass('playing');
+      this.audio.src = '';
+      $('#player').attr('class', 'right-of-library stopped');
+      store.set('lasttrack', null);
+      this._bufstart = null;
+      (function() {
+        $('#status span').html('');
+        return $('#status span:eq(0)').html('Stopped');
+      }).timeout(150);
+      if (this._nextAudio != null) {
+        $(this._nextAudio.audio).remove();
+        return this._nextAudio = null;
+      }
+    };
+
+    /*
     	Set volume in percentage (0-100) & adjust for replaygain
     	If the volume is null, we'll set it to the current volume, but re-apply
     	replaygain (do this when switching tracks)
@@ -283,7 +333,7 @@
 
 
     Player.prototype.setVol = function(v) {
-      var apply, rg, scale;
+      var apply, rg, scale, _ref, _ref1, _ref2;
 
       if (v == null) {
         v = null;
@@ -297,9 +347,9 @@
         rg = false;
         apply = store.get('replaygain');
         if (apply === 'album') {
-          rg = window._cache.albums[window._cache.tracks[this._curplaying.trackId].album].rg_gain;
+          rg = (_ref = window._cache.albums[(_ref1 = window._cache.tracks[this._curplaying.trackId]) != null ? _ref1.album : void 0]) != null ? _ref.rg_gain : void 0;
         } else if (apply === 'track') {
-          rg = window._cache.tracks[this._curplaying.trackId].rg_gain;
+          rg = (_ref2 = window._cache.tracks[this._curplaying.trackId]) != null ? _ref2.rg_gain : void 0;
         }
         if (rg) {
           scale = Math.pow(10, rg / 20);

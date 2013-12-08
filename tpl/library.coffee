@@ -99,16 +99,17 @@ window.Library = class Library
 
 	###
 	Filter
-	TODO: unicode, ie. `a' also matches `ä'
 	###
 	initFilter: ->
 		t = null
 		pterm = null
 
 		dofilter = (target) ->
-			target.removeClass 'invalid'
 			term = target.val().trim()
 			return if term is pterm
+
+			target.removeClass 'invalid'
+			target.parent().find('.error').remove()
 
 			pterm = term
 			if term is ''
@@ -118,18 +119,16 @@ window.Library = class Library
 
 			try
 				term = new RegExp term
-			# Not a valid RegExp
-			# TODO: Give a clearer warning
 			catch exc
 				target.addClass 'invalid'
+				target.after '<span class="error">Invalid regular expression</span>'
 				return
 
-			# Hiding everything & then showing matches is *much* faster
 			$('#library li').hide()
 			$('#library ol')[0].scrollTop = 0
 			$$('#library li').forEach (row) ->
 				row = $(row)
-				if row.text().toLowerCase().match term
+				if row.text().toLowerCase().match(term) or row.attr('data-name_tr')?.toLowerCase().match(term)
 					if row.is('.artist')
 						row.show()
 						n = row.next()
@@ -242,7 +241,6 @@ window.Library = class Library
 				e.preventDefault()
 				events[e.keyCode]()
 			# 0-9a-z & space
-			# TODO: unicode, ie. `a' also matches `ä'
 			else if e.keyCode is 32 or (e.keyCode > 46 and e.keyCode < 91)
 				e.preventDefault()
 				chain += String.fromCharCode(e.keyCode).toLowerCase()
@@ -250,9 +248,11 @@ window.Library = class Library
 				f = (chain) ->
 					$('#library li').each (i, elem) ->
 						elem = $(elem)
-						if elem.is(':visible') and elem.text().toLowerCase().indexOf(chain) is 0
-							my.selectRow elem
-							return false
+						if elem.is(':visible') and
+							(elem.text().toLowerCase().indexOf(chain) is 0 or
+							elem.attr('data-name_tr')?.toLowerCase().indexOf(chain) is 0)
+								my.selectRow elem
+								return false
 
 				timer = f.timeout 100, [chain]
 

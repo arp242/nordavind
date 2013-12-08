@@ -1,7 +1,3 @@
-- Gapless playback
-- Deal with high-res cover art
-
-
 A TODO list :-)
 
 - Select multiple rows in playlist with the mouse
@@ -10,6 +6,4 @@ A TODO list :-)
 - More flexible library view (ie. grouping by arbitrary tags)
 - Specify columns in playlist
 - Resize columns in playlist
-- Support for reading more codecs (ape, mpc, aac, etc.)
 - Touch device support
-- Windows support

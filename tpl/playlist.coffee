@@ -340,19 +340,117 @@ window.Playlist = class Playlist
 		for k, t of window._cache.artists
 			delete window._cache.artists[k] unless t.id in artists
 
-		if deleted.length > 0
-			jQuery.ajax
-				url: "#{_root}/clean-cache"
-				type: 'post'
-				data:
-					tracks: deleted.join ','
-
 
 	###
 	###
 	headSize: ->
 		$('#playlist thead th').each (i, cell) ->
 			$("#playlist-thead .cell:eq(#{i})").css 'width', "#{$(cell).width() + 2}px"
-		#w = $('#playlist').width() - $('#playlist-thead').width()
 		w = $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth())
 		$('#playlist-thead > .cell:last').css 'width', "+=#{w}px"
+
+
+###
+###
+selectBox = (target) ->
+	target = $(target)
+
+	dragging = false
+	maystart = false
+	startrow = null
+	box = null
+	startX = 0
+	startY = 0
+	prev = ''
+
+	# Start
+	target.on 'mousedown.selectbox', (e) ->
+		maystart = true
+		startX = e.pageX
+		startY = e.pageY
+
+	# End
+	$('body').on 'mouseup.selectbox', (e) ->
+		maystart = false
+		dragging = false
+		startrow = null
+		box?.remove()
+		box = null
+		prev = ''
+
+	# Move
+	$('body').on 'mousemove.selectbox', (e) ->
+		if not dragging and maystart and (Math.abs(startX - e.pageX) > 5 or Math.abs(startY - e.pageY) > 5)
+			dragging = true
+
+			# HACK!!
+			window._activepane = $('#playlist-wrapper')
+			$('.pane-active').removeClass 'pane-active'
+			window._activepane.addClass 'pane-active'
+
+			$('body').append '<div id="selectbox"></div>'
+			box = $('#selectbox')
+
+			box.css
+				left: "#{startX}px"
+				top: "#{startY}px"
+
+			window.getSelection?().empty?()
+			window.getSelection?().removeAllRanges?()
+			document.selection?.empty()
+			document.body.focus()
+			e.preventDefault()
+
+		return unless dragging
+
+		row = $(e.target).closest 'tr'
+		if row.length > 0
+			startrow = row unless startrow?
+			if row.index() > startrow.index()
+				from = startrow.index()
+				to = row.index() + 1
+			else if row.index() < startrow?.index()
+				from = row.index()
+				to = startrow.index() + 1
+			else
+				from = row.index()
+				to = row.index()
+
+			if "#{from}-#{to}" isnt "#{prev.from}-#{prev.to}"
+				if from isnt prev.from
+					$("#playlist tr:lt(#{from})").removeClass 'selected'
+				if to isnt prev.to
+					$("#playlist tr:gt(#{to})").removeClass 'selected'
+
+				window.playlist.selectRow r, false for r in $('#playlist tbody tr').slice from, to
+				window.playlist.selectRow row
+			prev = from: from, to: to
+
+		w = $(window).width()
+		h = $(window).height()
+
+		if e.pageX > startX
+			l = startX
+			r = w - e.pageX
+		else
+			l = e.pageX
+			r = w - startX
+
+		if e.pageY > startY
+			t = startY
+			b = h - e.pageY
+		else
+			t = e.pageY
+			b = h - startY
+
+		offs = $('#playlist-wrapper').offset()
+		l = Math.max l, offs.left
+		#r = Math.max r, $('#playlist').offset().left + $('#playlist').width()
+		#t = Math.max t, $('#playlist').offset().top
+		#b = Math.max b, offs.top + $('#playlist-wrapper').height()
+
+		box.css
+			left: l + 'px'
+			right: r + 'px'
+			top: t + 'px'
+			bottom: b + 'px'

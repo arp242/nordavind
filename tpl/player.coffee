@@ -5,6 +5,7 @@ window.Player = class Player
 
 	# Easy reference to our <audio> element
 	audio: $('audio')[0]
+	_nextAudio: null
 
 	# Current playing track
 	_curplaying:
@@ -42,18 +43,7 @@ window.Player = class Player
 		$('#player').on 'click', '.pause', (e) -> my.audio.pause()
 		$('#player').on 'click', '.forward', (e) -> my.playNext()
 		$('#player').on 'click', '.backward', (e) -> my.playPrev()
-
-		$('#player').on 'click', '.stop', (e) ->
-			$('.seekbar .buffer').css 'width', '0px'
-			my.audio.pause()
-			$('#playlist tr').removeClass 'playing'
-			my.audio.src = ''
-			$('#player').attr 'class', 'right-of-library stopped'
-			store.set 'lasttrack', null
-			my._bufstart = null
-			$('#status span').html ''
-			$('#status span:eq(0)').html 'Stopped'
-
+		$('#player').on 'click', '.stop', (e) -> my.stop()
 
 
 	###
@@ -91,19 +81,26 @@ window.Player = class Player
 	
 	###
 	###
-	initPlayer: ->
+	initPlayer: (audio=null) ->
+		audio = @audio unless audio
 		my = this
 
-		$(@audio).bind 'play', ->
+		$(audio).bind 'play', ->
+			return unless $(this).hasClass 'active'
+
 			$('#player').attr 'class', 'right-of-library playing'
 			$('#playlist .playing .icon-pause').attr 'class', 'icon-play'
 
-		$(@audio).bind 'pause', ->
+		$(audio).bind 'pause', ->
+			return unless $(this).hasClass 'active'
+
 			$('#player').attr 'class', 'right-of-library paused'
 			$('#playlist .playing .icon-play').attr 'class', 'icon-pause'
 			$('#status span:eq(0)').html 'Paused'
 
-		$(@audio).bind 'ended', ->
+		$(audio).bind 'ended', ->
+			return unless $(this).hasClass 'active'
+
 			$('.seekbar .buffer').css 'width', '0px'
 			my._bufstart = null
 
@@ -120,28 +117,43 @@ window.Player = class Player
 						duration: track.length
 
 			unless my.playNext()
-				$('#player').attr 'class', 'right-of-library stopped'
-				store.set 'lasttrack', null
-				$('#status span').html ''
-				$('#status span:eq(0)').html 'Stopped'
+				my.stop()
 
-		$(@audio).bind 'timeupdate', (e) ->
+		$(audio).bind 'timeupdate', (e) ->
+			return unless $(this).hasClass 'active'
+
 			return if my._draggingseekbar
-			v = my.audio.currentTime / my._curplaying.length * 100
+			v = Math.min 100, my.audio.currentTime / my._curplaying.length * 100
 			my.seekbar.setpos v
 
 			t = displaytime my.audio.currentTime
 			$('#status span:eq(0)').html 'Playing'
 			$('#status span:eq(1)').html "#{t} / #{displaytime my._curplaying.length}"
 
-		$(@audio).bind 'progress', (e) ->
+			# Prepare the next audio element for gapless playback
+			if my._nextAudio is null and my._curplaying.length - my.audio.currentTime < 10
+				next = $('#playlist .playing').next()
+				if next? and next.attr('data-id')?
+					my._nextAudio =
+						audio: document.createElement 'audio'
+						id: next.attr 'data-id'
+
+					my._nextAudio.audio.preload = 'auto'
+					my._nextAudio.audio.src = "#{_root}/play-track/#{store.get 'client'}/#{my.codec}/#{next.attr 'data-id'}"
+					$(my.audio).after my._nextAudio.audio
+					my.initPlayer my._nextAudio.audio
+
+		$(audio).bind 'progress', (e) ->
+			return unless $(this).hasClass 'active'
+
 			try
-				c = Math.round(my.audio.buffered.end(0) / my._curplaying.length * 100)
+				c = Math.min 100, Math.round(my.audio.buffered.end(0) / my._curplaying.length * 100)
 			catch exc
 				return
 
 			if c is 100
 				$('#status span:eq(2)').html "Buffer #{c}%"
+				$('.seekbar .buffer').css 'width', "#{c}%"
 			else
 				unless my.bufstart
 					my.bufstart = new Date().getTime() / 1000
@@ -151,13 +163,7 @@ window.Player = class Player
 				r = (dur / c) * (100 - c)
 
 				$('#status span:eq(2)').html "Buffer #{c}% (~#{displaytime Math.round(r)}s remaining)"
-
-		$(@audio).bind 'progress', (e) ->
-			try
-				v = my.audio.buffered.end(0) / my._curplaying.length * 100
-			catch exc
-				return
-			$('.seekbar .buffer').css 'width', "#{v}%"
+				$('.seekbar .buffer').css 'width', "#{c}%"
 
 
 	###
@@ -168,9 +174,18 @@ window.Player = class Player
 			return alert "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
 
 		@bufstart = null
-		@audio.pause()
-		@audio.src = ''
-		@audio.src = "#{_root}/play-track/#{@codec}/#{trackId}"
+		if @_nextAudio? and trackId isnt @_nextAudio.id
+			$(@_nextAudio.audio).remove()
+			@_nextAudio = null
+		else if @_nextAudio?
+			@audio.remove()
+			@audio = @_nextAudio.audio
+			@_nextAudio = null
+			@audio.className = 'active'
+		else
+			@audio.pause()
+			@audio.src = ''
+			@audio.src = "#{_root}/play-track/#{store.get 'client'}/#{@codec}/#{trackId}"
 
 		@_curplaying =
 			trackId: trackId
@@ -178,6 +193,7 @@ window.Player = class Player
 			start: (new Date().getTime() / 1000).toNum() + new Date().getTimezoneOffset()
 		@setVol()
 		@audio.play()
+		$(@audio).trigger 'progress'
 
 		row = $("#playlist tr[data-id=#{trackId}]")
 		$('#playlist tr').removeClass 'playing'
@@ -214,6 +230,27 @@ window.Player = class Player
 
 
 	###
+	Stop playing
+	###
+	stop: ->
+		$('.seekbar .buffer').css 'width', '0px'
+		@audio.pause()
+		$('#playlist tr').removeClass 'playing'
+		@audio.src = ''
+		$('#player').attr 'class', 'right-of-library stopped'
+		store.set 'lasttrack', null
+		@_bufstart = null
+
+		(->
+			$('#status span').html ''
+			$('#status span:eq(0)').html 'Stopped'
+		).timeout 150
+
+		if @_nextAudio?
+			$(@_nextAudio.audio).remove()
+			@_nextAudio = null
+
+	###
 	Set volume in percentage (0-100) & adjust for replaygain
 	If the volume is null, we'll set it to the current volume, but re-apply
 	replaygain (do this when switching tracks)
@@ -227,9 +264,9 @@ window.Player = class Player
 			rg = false
 			apply = store.get 'replaygain'
 			if apply is 'album'
-				rg = window._cache.albums[window._cache.tracks[@_curplaying.trackId].album].rg_gain
+				rg = window._cache.albums[window._cache.tracks[@_curplaying.trackId]?.album]?.rg_gain
 			else if apply is 'track'
-				rg = window._cache.tracks[@_curplaying.trackId].rg_gain
+				rg = window._cache.tracks[@_curplaying.trackId]?.rg_gain
 			scale = Math.pow(10, rg / 20) if rg
 
 		@audio.volume = v * scale / 100

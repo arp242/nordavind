@@ -1,6 +1,6 @@
 <ol>
 	{% for artist in library %}
-		<li class="artist" data-id="{{ artist.id }}">
+		<li class="artist" data-id="{{ artist.id }}" {% if artist.name_tr %}data-name_tr="{{ artist.name_tr|e }}"{% endif %}>
 			<i class="icon-expand-alt"></i>
 			<span>{{ artist.name|e }}</span>
 		</li>

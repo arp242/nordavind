@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# encoding:utf-8
 #
 # http://code.arp242.net/nordavind
 #
@@ -11,7 +10,7 @@ import sys, json, os, datetime
 
 import cherrypy
 
-import nordavind
+import nordavind, nordavind.audio
 
 
 def JSONDefault(obj):
@@ -23,7 +22,6 @@ def dbcache():
 	mtime = datetime.datetime.fromtimestamp(int(os.stat(nordavind.config['dbpath']).st_mtime))
 	fmt = '%a, %d %b %Y %H:%M:%S GMT'
 	cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-	#cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
 	cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
 	cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
 
@@ -33,22 +31,21 @@ class AgentCooper:
 	def index():
 		dbcache()
 		return nordavind.template('main.html', {
-			'version': '1.0',
+			'version': '1.0-dev',
 			'library': nordavind.getLibrary(),
 		})
 
 
 	@cherrypy.expose
 	def get_settings():
-		return nordavind.template('settings.html', {
-		})
+		return nordavind.template('settings.html')
 
 
 	@cherrypy.expose
 	def lastfm_callback(token=None):
 		return '''
 			<html><head></head></html><body>
-			<script>localStorage.setItem('token', '%s'); window.close()</script>
+			<script>localStorage.setItem('nordavind_token', '%s'); window.close()</script>
 			You can close this window
 			</body></html>
 		''' % (token,)
@@ -57,30 +54,23 @@ class AgentCooper:
 	@cherrypy.expose
 	def get_album(albumid):
 		dbcache()
-		return json.dumps(nordavind.getAlbum(albumid),
-			default=JSONDefault)
+		return json.dumps(nordavind.getAlbum(albumid), default=JSONDefault)
 
 
 	@cherrypy.expose
 	def get_album_by_track(trackid):
 		dbcache()
-		return json.dumps(nordavind.getAlbumByTrack(trackid),
-			default=JSONDefault)
+		return json.dumps(nordavind.getAlbumByTrack(trackid), default=JSONDefault)
 
 
 	@cherrypy.expose
-	def play_track(codec, trackid):
+	def play_track(client, codec, trackid):
+		cherrypy.request.hooks.attach('on_end_request',
+			lambda: nordavind.audio.clean(client, trackid), True)
+
 		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
-		#cherrypy.request.hooks.attach('on_end_request',
-		#	lambda: nordavind.playTrack_clean(trackid), True)
-		return nordavind.playTrack(codec, trackid)
+		return nordavind.playTrack(client, codec, trackid)
 	play_track._cp_config = {'response.stream': True}
-
-
-	@cherrypy.expose
-	def clean_cache(tracks=None):
-		for t in tracks.split(','):
-			nordavind.cleanCache(t)
 
 
 	@cherrypy.expose
@@ -92,9 +82,7 @@ class AgentCooper:
 
 		mtime = datetime.datetime.fromtimestamp(int(os.stat('config.cfg').st_mtime))
 		fmt = '%a, %d %b %Y %H:%M:%S GMT'
-
 		cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-		#cherrypy.response.headers['Cache-Control'] = 'max-age=%s, must-revalidate' % (86400 * 365,)
 		cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
 		cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
 
@@ -128,7 +116,6 @@ cherrypy.quickstart(AgentCooper, config={
 		)
 	}
 })
-
 
 
 # The MIT License (MIT)

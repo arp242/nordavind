@@ -7,9 +7,13 @@
 # See below for full copyright
 #
 
-import os, re, sys, urllib.parse, sqlite3, base64, glob
+import os, re, sys, urllib.parse, sqlite3, base64, glob, io
 
-import taglib
+import taglib, unidecode
+try:
+	from PIL import Image
+except ImportError:
+	Image = None
 
 import nordavind.audio
 
@@ -36,7 +40,7 @@ def openDb(create=True):
 	return db
 
 
-def template(f, v):
+def template(f, v={}):
 	from jinja2 import Environment, FileSystemLoader
 
 	env = Environment(loader=FileSystemLoader('%s/tpl' % _root))
@@ -90,10 +94,9 @@ def addOrUpdateTrack(path):
 	db = openDb()
 	c = db.cursor()
 
+	tags = getTags(path)
 	track = c.execute('select * from tracks where path = ?',
 		(path,)).fetchone()
-
-	tags = getTags(path)
 
 	# Add track
 	if track is None:
@@ -111,8 +114,7 @@ def addOrUpdateTrack(path):
 
 			# Add artist
 			if artist is None:
-				c.execute('insert into artists (name) values (?)',
-					(a,))
+				c.execute('insert into artists (name) values (?)', (a,))
 				artist = c.lastrowid
 			else:
 				artist = artist['id']
@@ -162,7 +164,7 @@ def getLibrary():
 	c = openDb().cursor()
 
 	r = []
-	for a in c.execute('select * from artists order by name').fetchall():
+	for a in c.execute('select * from artists').fetchall():
 		r.append({
 			'id': a['id'],
 			'name': a['name'],
@@ -170,33 +172,20 @@ def getLibrary():
 				(a['id'],)).fetchall()
 		})
 
+		tr = unidecode.unidecode(a['name'])
+		if tr != a['name']:
+			r[len(r) - 1]['name_tr'] = tr
+
+	r.sort(key=lambda k: (k.get('name_tr') or k['name']).lower())
 	return r
 
-def playTrack(codec, id):
+
+def playTrack(client, codec, id):
 	c = openDb().cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
 
-	cache = None
-	if config.get('cachepath') not in [None, False, '']:
-		cache = '%s/%s_%s.%s' % (config['cachepath'], id, re.sub(r'[^\w]', '', track['path']), codec)
-
-	if cache and os.path.exists(cache):
-		fp = open(cache, 'rb')
-		while True:
-			buf = fp.read(8192)
-			if not buf: break
-			yield buf
-	else:
-		if cache is not None:
-			cachefp = open(cache + '_temp', 'wb')
-		
-		for buf in nordavind.audio.convert(track['path'], codec):
-			if cache is not None: cachefp.write(buf)
-			yield buf
-
-		if cache is not None:
-			cachefp.close()
-			os.rename(cache + '_temp', cache)
+	for buf in nordavind.audio.convert(client, id, track['path'], codec):
+		yield buf
 
 
 def getAlbum(id):
@@ -209,9 +198,21 @@ def getAlbum(id):
 	if album['cover']:
 		t = album['cover'].split('.').pop()
 		if t == 'jpg': t = 'jpeg'
-		album['coverdata'] = 'data:image/%s;base64,%s' % (t,
-			base64.b64encode(open(album['cover'], 'rb').read()).decode()
-		)
+
+		if Image is not None:
+			img = Image.open(album['cover'])
+			img.thumbnail((800, 800), Image.ANTIALIAS)
+			out = io.BytesIO()
+			img.save(out, img.format)
+
+			album['coverdata'] = 'data:image/%s;base64,%s' % (t,
+				base64.b64encode(out.getvalue()).decode())
+		else:
+			if os.stat(album['cover']).st_size > 500 * 1024:
+				album['coverdata'] = ''
+			else:
+				album['coverdata'] = 'data:image/%s;base64,%s' % (t,
+					base64.b64encode(open(album['cover'], 'rb').read()).decode())
 	else:
 		album['coverdata'] = ''
 
@@ -228,14 +229,6 @@ def getAlbumByTrack(id):
 		(id,)).fetchone()['album'])
 
 
-def cleanCache(trackid):
-	if config.get('cachepath') in [None, False, '']:
-		return
-
-	cache = glob.glob('%s/%s_*' % (config['cachepath'], trackid))
-	for c in cache: os.unlink(c)
-
-
 
 config = {}
 for line in open('config.cfg').readlines():
@@ -248,14 +241,8 @@ for line in open('config.cfg').readlines():
 
 	if v == '': continue
 
-	if k == 'dbpath':
-		v = '%s/%s' % (_root, v)
-
+	if k == 'dbpath': v = '%s/%s' % (_root, v)
 	config[k] = v
-
-if config.get('cachepath') not in [None, False, ''] and not os.path.exists(config['cachepath']):
-	os.makedirs(config['cachepath'])
-
 
 
 # The MIT License (MIT)

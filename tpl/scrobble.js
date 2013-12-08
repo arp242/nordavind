@@ -22,7 +22,7 @@
     Scrobble.prototype.enabled = false;
 
     function Scrobble() {
-      if (window.localStorage.getItem('lastfm')) {
+      if (window.localStorage.getItem('nordavind_lastfm')) {
         this.enabled = true;
       }
     }
@@ -39,11 +39,11 @@
       return (function() {
         var token;
 
-        token = localStorage.getItem('token');
+        token = localStorage.getItem('nordavind_token');
         if (token === null) {
           return;
         }
-        localStorage.removeItem('token');
+        localStorage.removeItem('nordavind_token');
         this.clearInterval();
         return my._req({
           method: 'auth.getSession',

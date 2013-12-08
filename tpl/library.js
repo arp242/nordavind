@@ -120,7 +120,6 @@
 
     /*
     	Filter
-    	TODO: unicode, ie. `a' also matches `ä'
     */
 
 
@@ -132,11 +131,12 @@
       dofilter = function(target) {
         var exc, term;
 
-        target.removeClass('invalid');
         term = target.val().trim();
         if (term === pterm) {
           return;
         }
+        target.removeClass('invalid');
+        target.parent().find('.error').remove();
         pterm = term;
         if (term === '') {
           $('#library .artist').show();
@@ -148,15 +148,16 @@
         } catch (_error) {
           exc = _error;
           target.addClass('invalid');
+          target.after('<span class="error">Invalid regular expression</span>');
           return;
         }
         $('#library li').hide();
         $('#library ol')[0].scrollTop = 0;
         $$('#library li').forEach(function(row) {
-          var n, _results;
+          var n, _ref, _results;
 
           row = $(row);
-          if (row.text().toLowerCase().match(term)) {
+          if (row.text().toLowerCase().match(term) || ((_ref = row.attr('data-name_tr')) != null ? _ref.toLowerCase().match(term) : void 0)) {
             if (row.is('.artist')) {
               row.show();
               n = row.next();
@@ -350,8 +351,10 @@
           }
           f = function(chain) {
             return $('#library li').each(function(i, elem) {
+              var _ref3;
+
               elem = $(elem);
-              if (elem.is(':visible') && elem.text().toLowerCase().indexOf(chain) === 0) {
+              if (elem.is(':visible') && (elem.text().toLowerCase().indexOf(chain) === 0 || ((_ref3 = elem.attr('data-name_tr')) != null ? _ref3.toLowerCase().indexOf(chain) : void 0) === 0)) {
                 my.selectRow(elem);
                 return false;
               }

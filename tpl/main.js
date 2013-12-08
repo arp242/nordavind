@@ -166,6 +166,7 @@
 
   $(document).ready(function() {
     $('input').val('');
+    store.init('client', md5(new Date() + Math.random()));
     store.init('playlist', []);
     store.init('replaygain', 'album');
     setSize();

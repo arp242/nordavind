@@ -43,10 +43,16 @@ Dependencies
 ------------
 - A UNIX/Linux machine (Windows will not work)
 - [Python 3](http://python.org/) (Python 2 will not work)
-- [Jinja2](http://jinja.pocoo.org/docs/)
-- py-sqlite3 (Included in Python, sometimes a separate package)
-- [pytaglib](https://pypi.python.org/pypi/pytaglib)
 - [CherryPy](http://www.cherrypy.org/)
+- [Jinja2](http://jinja.pocoo.org/docs/)
+- [pytaglib](https://pypi.python.org/pypi/pytaglib)
+- [Unidecode](https://pypi.python.org/pypi/Unidecode)
+- py-sqlite3 (Included in Python, sometimes a separate package)
+
+== Optional ==
+- [Pillow](https://github.com/python-imaging/Pillow) or any other PIL-compatible
+  library (there are several), this is used to scale large covers to a
+  reasonable size, if not installed, large covers simply won't be displayed
 
 
 ### Optional
@@ -153,6 +159,6 @@ Nordavind includes (in whole, or code based on):
 - [Bootstrap](http://getbootstrap.com/)
 - [Font awesome](http://fortawesome.github.io/Font-Awesome/)
 - [jQuery](http://jquery.com/)
-- [jQuery.mousewheel](http://brandonaaron.net)
-- [Perfect Scrollbar](http://github.com/noraesae)
+- [jQuery.mousewheel](https://github.com/brandonaaron/jquery-mousewheel)
+- [Perfect Scrollbar](http://github.com/noraesae/perfect-scrollbar)
 - [Javascript MD5](http://pajhome.org.uk/crypt/md5/md5.html)
