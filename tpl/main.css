@@ -484,6 +484,9 @@ tr.active {
   text-align: right;
   padding: 5px;
 }
+#dialog label {
+  margin-left: .5em;
+}
 #dialog .lastfm .btn {
   display: none;
 }

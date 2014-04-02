@@ -25,10 +25,14 @@ window.Playlist = class Playlist
 		row.addClass 'active'
 		window.info.setTrack row.attr('data-id')
 
-		if row.position().top > $('#playlist-wrapper').height() or row.position().top < 0
-			$('#playlist-wrapper')[0].scrollTop += row.position().top
+		# TODO: This can (& should) be improved by looking at the actual
+		# position of the first row we want to show
+		rowheight = $('#playlist tbody tr:first').outerHeight()
+		if row.position().top > $('#playlist-wrapper').height() - rowheight
+			$('#playlist-wrapper')[0].scrollTop += row.position().top - rowheight * 2
 			$('#playlist-wrapper').scrollbar 'update'
-
+		else if row.position().top < rowheight
+			$('#playlist-wrapper')[0].scrollTop -= Math.floor($('#playlist-wrapper').height() / rowheight) * rowheight
 
 	###
 	Select a row in the playlist

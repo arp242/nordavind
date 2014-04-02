@@ -205,8 +205,6 @@ window.Library = class Library
 				27: -> # Esc
 					clearTimeout timer if timer
 					clearTimeout cleartimer if cleartimer
-					chain = ''
-					return
 				38: -> my.selectRow $('#library .active').findPrev 'li:visible' # Up
 				40: -> my.selectRow $('#library .active').findNext 'li:visible' # Down
 				39: -> # Right
@@ -239,6 +237,7 @@ window.Library = class Library
 
 			if events[e.keyCode]?
 				e.preventDefault()
+				chain = ''
 				events[e.keyCode]()
 			# 0-9a-z & space
 			else if e.keyCode is 32 or (e.keyCode > 46 and e.keyCode < 91)
@@ -257,4 +256,4 @@ window.Library = class Library
 				timer = f.timeout 100, [chain]
 
 				clearTimeout cleartimer if cleartimer
-				cleartimer = (-> chain = '').timeout 3000
+				cleartimer = (-> chain = '').timeout 1500

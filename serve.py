@@ -96,7 +96,7 @@ if len(sys.argv) > 1:
 	listen = sys.argv[1].split(':')
 	server = listen[0]
 	if len(listen) > 1:
-		port = listen[1]
+		port = int(listen[1])
 
 cherrypy.config.update({
 	'server.socket_host': server,

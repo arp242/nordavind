@@ -1,9 +1,9 @@
 A TODO list :-)
 
-- Select multiple rows in playlist with the mouse
-- Test (& fix) various browsers
 - Actually deal with various errors that may occur
+- Adding the same trackid twice to the playlist causes weird effects
+- Test (& fix) various browsers
 - More flexible library view (ie. grouping by arbitrary tags)
 - Specify columns in playlist
 - Resize columns in playlist
-- Touch device support
+- Touch device support?

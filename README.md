@@ -1,10 +1,12 @@
-Nordavind is a web based audio player. The idea is that you can play your music
-collection at home anywhere.
+Nordavind is a web based audio player.
 
 The UI is inspired by foobar2000, or rather, my particular foobar2000 setup
 (Nordavind doesn’t offer the *extreme* flexibility that foobar2000 has).
 
 For a general impression, check out the [screenshots](https://bitbucket.org/Carpetsmoker/nordavind/wiki/Home)
+
+Current status: It's usable (I use it almost daily), but not as polished as I'd
+like it to be, which is why there isn't a `1.0 release' yet.
 
 
 Browser support
@@ -150,7 +152,7 @@ Version 1.0, TODO
 
 Credits
 =======
-Copyright © 2013 Martin Tournoij <martin@arp242.net>  
+Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>  
 MIT license applies
 
 Nordavind includes (in whole, or code based on):
