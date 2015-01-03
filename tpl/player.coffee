@@ -116,8 +116,7 @@ window.Player = class Player
 						trackNumber: track.trackno
 						duration: track.length
 
-			unless my.playNext()
-				my.stop()
+			my.stop() unless my.playNext()
 
 		$(audio).bind 'timeupdate', (e) ->
 			return unless $(this).hasClass 'active'
@@ -269,5 +268,5 @@ window.Player = class Player
 				rg = window._cache.tracks[@_curplaying.trackId]?.rg_gain
 			scale = Math.pow(10, rg / 20) if rg
 
-		@audio.volume = v * scale / 100
+		@audio.volume = Math.min 1, v * scale / 100
 		window.vol.setpos store.get('volume')

@@ -2,7 +2,7 @@
 #
 # http://code.arp242.net/nordavind
 #
-# Copyright © 2013 Martin Tournoij <martin@arp242.net>
+# Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -33,6 +33,7 @@ class AgentCooper:
 		return nordavind.template('main.html', {
 			'version': '1.0-dev',
 			'library': nordavind.getLibrary(),
+			'searches': nordavind.get_searches(),
 		})
 
 
@@ -74,11 +75,45 @@ class AgentCooper:
 
 
 	@cherrypy.expose
+	def sql_search(sql):
+		db = nordavind.openDb(create=False, read_only=True)
+		c = db.cursor()
+
+		try:
+			result = c.execute('select id from albums where {}'.format(sql.strip('$').strip()))
+			result = {
+				'success': True,
+				'albums': [ r['id'] for r in result.fetchall() ],
+			}
+		except Exception as exc:
+			result = {
+				'success': False,
+				'error': str(exc),
+			}
+
+		return json.dumps(result, default=JSONDefault)
+
+
+	@cherrypy.expose
+	def save_search(search):
+		db = nordavind.openDb(create=False)
+		c = db.cursor()
+		db.commit()
+
+
+	@cherrypy.expose
+	def submit_rating(album_id, rating):
+		db = nordavind.openDb(create=False)
+		c = db.cursor()
+		c.execute('update albums set rating=? where id=?', (rating, album_id,))
+		db.commit()
+		return json.dumps({'success': True}, default=JSONDefault)
+
+
+	@cherrypy.expose
 	def tpl(*args, **kwargs):
 		path = '%s/tpl/%s' % (nordavind._root, '/'.join(args))
-
-		if not os.path.exists(path):
-			raise cherrypy.NotFound()
+		if not os.path.exists(path): raise cherrypy.NotFound()
 
 		mtime = datetime.datetime.fromtimestamp(int(os.stat('config.cfg').st_mtime))
 		fmt = '%a, %d %b %Y %H:%M:%S GMT'
@@ -87,6 +122,14 @@ class AgentCooper:
 		cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
 
 		return cherrypy.lib.static.serve_file(path)
+
+
+def error_401(status, message, traceback, version):
+	return 'Wrong username/password'
+
+
+def error_404(status, message, traceback, version):
+	return '404'
 
 
 server = '0.0.0.0'
@@ -101,6 +144,8 @@ if len(sys.argv) > 1:
 cherrypy.config.update({
 	'server.socket_host': server,
 	'server.socket_port': port,
+	'error_page.404': error_404,
+	'error_page.401': error_401,
 })
 
 cherrypy.quickstart(AgentCooper, config={
@@ -120,7 +165,7 @@ cherrypy.quickstart(AgentCooper, config={
 
 # The MIT License (MIT)
 #
-# Copyright © 2013 Martin Tournoij
+# Copyright © 2013-2014 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

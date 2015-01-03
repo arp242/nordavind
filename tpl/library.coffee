@@ -9,6 +9,7 @@ window.Library = class Library
 		@initFilter()
 		@initMouse()
 		@initKeyboard()
+		@initRandom()
 
 	
 	###
@@ -101,12 +102,24 @@ window.Library = class Library
 	Filter
 	###
 	initFilter: ->
+		my = this
+
 		t = null
 		pterm = null
+		
+		$('#search select').on 'change', (e) ->
+			v = $(this).val()
+			$('#search input').val(v).change()
+			pterm = null
+			t = null
+			clearTimeout t if t
+			$(this).val 0
+
+
 
 		dofilter = (target) ->
 			term = target.val().trim()
-			return if term is pterm
+			return if term is pterm  # Unchanged
 
 			target.removeClass 'invalid'
 			target.parent().find('.error').remove()
@@ -115,6 +128,10 @@ window.Library = class Library
 			if term is ''
 				$('#library .artist').show()
 				$('#library .album').hide()
+				return
+
+			if term[0] == '$'
+				my.sql_search term
 				return
 
 			try
@@ -147,6 +164,36 @@ window.Library = class Library
 
 		$('#search input').on 'keydown', filter
 		$('#search input').on 'change', filter
+
+
+	###
+	###
+	sql_search: (term) ->
+		my = this
+
+		do_filter = (data) ->
+			console.log data
+			unless data.success
+				alert data.error
+				return
+
+			$('#library li').hide()
+			$('#library ol')[0].scrollTop = 0
+			data.albums.forEach (id) ->
+				row = $("#library .album[data-id=#{id}]")
+				row.show()
+				row.findPrev('.artist').show()
+				row.attr 'data-match', 'true'
+			my.updateScrollbar
+
+		if term[term.length - 1] is '$'
+			jQuery.ajax
+				url: '/sql_search'
+				type: 'get'
+				dataType: 'json'
+				data:
+					sql: term
+				success: do_filter
 
 
 	###
@@ -257,3 +304,13 @@ window.Library = class Library
 
 				clearTimeout cleartimer if cleartimer
 				cleartimer = (-> chain = '').timeout 1500
+
+	###
+	###
+	initRandom: ->
+		$(document).on 'click', '.random-album', (e) ->
+			e.preventDefault()
+
+			list = $('#library .album')
+			rnd = list.eq Math.floor(Math.random() * list.length)
+			rnd.find('span').dblclick()

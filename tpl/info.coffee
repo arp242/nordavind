@@ -10,6 +10,20 @@ window.Info = class Info
 		$('#info .table-wrapper').scrollbar
 			wheelSpeed: 150
 
+		# Send rating
+		$('#info').on 'change', 'select', ->
+			album_id = $('#info').attr 'data-album-id'
+			rating = $(this).val()
+			jQuery.ajax
+				url: "/submit-rating/#{album_id}/#{rating}"
+				type: 'post'
+				dataType: 'json'
+				success: (data) ->
+					_cache.albums[album_id].rating = rating.toNum() if data.success
+					console.log _cache.albums[album_id]
+
+
+		# Show large cover
 		$('#info').on 'click', 'img', (e) ->
 			img = $(this)
 			return if img.attr('src') is ''
@@ -93,6 +107,8 @@ window.Info = class Info
 			$('#info .table-wrapper').width $('#info').width() - $('#info img').width() - 20
 		$('#info img').attr 'src', album.coverdata
 
+		$('#info').attr 'data-album-id', album.id
+
 		$('#info tbody').html('').append """
 			<tr>
 				<th>Artist name</th>
@@ -101,6 +117,22 @@ window.Info = class Info
 			<tr>
 				<th>Album title</th>
 				<td>#{album.name.quote() or '[Unknown]'}</td>
+			</tr>
+			<tr>
+				<th>Album added</th>
+				<td>#{album.added_on.quote()}</td>
+			</tr>
+			<tr>
+				<th>Album rating</th>
+				<td>
+					<select id="rating">
+						<option value="0" #{'selected' if album.rating is 0}>Unrated</option>
+						<option value="1" #{'selected' if album.rating is 1}>Crap</option>
+						<option value="2" #{'selected' if album.rating is 2}>Meh</option>
+						<option value="3" #{'selected' if album.rating is 3}>Okay</option>
+						<option value="4" #{'selected' if album.rating is 4}>Super</option>
+					</select>
+				</td>
 			</tr>
 			<tr>
 				<th>Track title</th>

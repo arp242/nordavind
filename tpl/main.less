@@ -51,21 +51,35 @@ fieldset {
 		position: relative;
 
 		div {
-			margin-right: 18px;
+			//margin-right: 52px;
 		}
-		i {
+		.icon-filter {
 			position: absolute;
 			left: 10px;
 			top: 9px;
 			font-size: 16px;
 		}
+		.save-search {
+			margin-left: -1px;
+			padding: 3px 8px;
+			border-top-left-radius: 0;
+			border-bottom-left-radius: 0;
+			width: 9%;
+		}
 		input {
 			padding: 4px;
 			padding-left: 22px;
-			width: 100%;
+			width: 67%;
+			//width: 100%;
 		}
 		input.invalid {
 			border-color: #f11;
+		}
+		select {
+			padding: 1px 4px;
+			//width: 2em;
+			width: 9%;
+			margin-left: -1px;
 		}
 
 		.error {
@@ -78,6 +92,12 @@ fieldset {
 			border-radius: 2px;
 			border-top-right-radius: 0;
 		}
+	}
+
+	.random-album {
+		position: absolute;
+		right: 10px;
+		top: 5px;
 	}
 }
 
@@ -168,6 +188,8 @@ fieldset {
 		input {
 			border: 1px solid #b7b7b7;
 			border-radius: 2px;
+			border-top-right-radius: 0;
+			border-bottom-right-radius: 0;
 		}
 	}
 

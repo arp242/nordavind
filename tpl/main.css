@@ -67,22 +67,31 @@ fieldset {
   margin-right: 3px;
   position: relative;
 }
-#library #search div {
-  margin-right: 18px;
-}
-#library #search i {
+#library #search .icon-filter {
   position: absolute;
   left: 10px;
   top: 9px;
   font-size: 16px;
 }
+#library #search .save-search {
+  margin-left: -1px;
+  padding: 3px 8px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  width: 9%;
+}
 #library #search input {
   padding: 4px;
   padding-left: 22px;
-  width: 100%;
+  width: 67%;
 }
 #library #search input.invalid {
   border-color: #f11;
+}
+#library #search select {
+  padding: 1px 4px;
+  width: 9%;
+  margin-left: -1px;
 }
 #library #search .error {
   position: absolute;
@@ -93,6 +102,11 @@ fieldset {
   color: #fff;
   border-radius: 2px;
   border-top-right-radius: 0;
+}
+#library .random-album {
+  position: absolute;
+  right: 10px;
+  top: 5px;
 }
 #player {
   position: absolute;
@@ -177,6 +191,8 @@ fieldset {
 #library #search input {
   border: 1px solid #b7b7b7;
   border-radius: 2px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 #library .active span {
   color: #fff;

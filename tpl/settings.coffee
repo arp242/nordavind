@@ -35,14 +35,14 @@ window.settings =
 			duration: 200
 		}
 
+		$('#dialog .close').on 'click', (e) ->
+			e.preventDefault()
+			window.settings.close()
+
 		# Last.fm
 		sess = store.get 'lastfm'
 		$('.lastfm').addClass if sess? then 'lastfm-enabled' else 'lastfm-disabled'
 		$('.disable-lastfm').replaceHTML '%user%', sess.name if sess?
-
-		$('#dialog .close').on 'click', (e) ->
-			e.preventDefault()
-			window.settings.close()
 
 		$('#dialog').on 'click', '.enable-lastfm', (e) ->
 			e.preventDefault()
@@ -62,11 +62,16 @@ window.settings =
 
 			store.del 'lastfm'
 			window.settings.close()
-			window.settings.create()
+			showSettings()
 
 		# ReplayGain
 		rp = store.get 'replaygain'
 		$("input[name=replaygain][value=#{rp}]").prop 'checked', true
+
+		# Misc
+		$('.clear-localstorage').on 'click', ->
+			window.localStorage.clear()
+			window.location.reload()
 
 
 	###

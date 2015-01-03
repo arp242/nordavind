@@ -3,29 +3,32 @@
 #
 # http://code.arp242.net/nordavind
 #
-# Copyright © 2013 Martin Tournoij <martin@arp242.net>
+# Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
-import os, re, sys, urllib.parse, sqlite3, base64, glob, io
+import os, re, sys, urllib.parse, sqlite3, base64, glob, io, datetime
+import unidecode
 
-import taglib, unidecode
 try:
 	from PIL import Image
 except ImportError:
 	Image = None
 
-import nordavind.audio
+import nordavind.audio, nordavind.update
 
 
 _root = os.path.dirname(os.path.realpath(sys.argv[0]))
 _wwwroot = ''
 config = None
+ratings = ['Unrated', 'Crap', 'Not very good', 'Okay', 'Super']
 
 
-def openDb(create=True):
-	db = sqlite3.connect(config['dbpath'],
-		detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+def openDb(create=True, read_only=False):
+	# Python 3.4 and newer only
+	#db = sqlite3.connect('file:{}{}'.format(config['dbpath'], '?mode=ro' if read_only else ''),
+	#	uri=True, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+	db = sqlite3.connect(config['dbpath'], detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
 
 	if create and len(db.cursor().execute('select * from sqlite_master where type="table"').fetchall()) == 0:
 		createDb()
@@ -66,6 +69,8 @@ def createDb():
 		numdiscs int,
 		numtracks int,
 		cover text,
+		added_on text not null,
+		rating int default 0 not null,
 		rg_gain real,
 		rg_peak real,
 		foreign key(artist) references artists(id) on delete cascade
@@ -84,80 +89,26 @@ def createDb():
 		foreign key(album) references albums(id) on delete cascade
 	)''')
 
-	c.execute('create unique index uniquepath on tracks (path)')
-	c.execute('create unique index uniquealbum on albums (artist, name)')
+	c.execute('''create table searches (
+		id integer primary key autoincrement,
+		name text not null,
+		search text not null
+	)''')
+
+	c.execute('create unique index unique_path on tracks (path)')
+	c.execute('create unique index unique_album on albums (artist, name)')
+	c.execute('create unique index unique_search on searches (name)')
+
+	c.execute('''insert into searches (name, search) values
+		("Recently added", "$ added_on > DATE('now', '-1 month') $"),
+		("Rating = Unrated", "$ rating = 0 $"),
+		("Rating => Crap", "$ rating >= 1 $"),
+		("Rating => Meh", "$ rating >= 2 $"),
+		("Rating => Okay", "$ rating >= 3 $"),
+		("Rating = Super", "$ rating = 4 $")
+	''')
 
 	db.commit()
-
-
-def addOrUpdateTrack(path):
-	db = openDb()
-	c = db.cursor()
-
-	tags = getTags(path)
-	track = c.execute('select * from tracks where path = ?',
-		(path,)).fetchone()
-
-	# Add track
-	if track is None:
-		album = c.execute('select * from albums where name = ?',
-			(tags.get('album'),)
-		).fetchone()
-
-		# Add album
-		if album is None:
-			a = tags.get('albumartist')
-			if not a: a = tags.get('artist')
-
-			artist = c.execute('select * from artists where name = ?',
-				(a,)).fetchone()
-
-			# Add artist
-			if artist is None:
-				c.execute('insert into artists (name) values (?)', (a,))
-				artist = c.lastrowid
-			else:
-				artist = artist['id']
-
-			cover = None
-			for p in ['cover.jpg', 'cover.jpeg', 'cover.png', 'front.jpg', 'front.jpeg', 'front.png']:
-				cover = '%s/%s' % (os.path.dirname(path), p)
-				if os.path.exists(cover):
-					break
-				else:
-					cover = None
-
-			c.execute('''insert into albums (artist, name, released, cover, numtracks, numdiscs, rg_gain, rg_peak)
-				values(?, ?, ?, ?, ?, ?, ?, ?)''',
-				(artist, tags.get('album'), tags.get('date', '').split('-')[0], cover, tags.get('tracktotal'),
-				tags.get('disctotal'), float(tags.get('replaygain_album_gain', '0').replace('dB', '')), float(tags.get('replaygain_album_peak', 0))))
-			album = c.lastrowid
-		else:
-			album = album['id']
-
-		c.execute('insert into tracks (path, name, album, trackno, discno, length, rg_gain, rg_peak) values (?, ?, ?, ?, ?, ?, ?, ?)',
-			(path, tags.get('title'), album, tags.get('tracknumber'), tags.get('discnumber'), tags.get('length'),
-			float(tags.get('replaygain_track_gain', '0').replace('dB', '')), float(tags.get('replaygain_track_peak', 0))))
-	# Update track
-	else:
-		c.execute('''update tracks set name = ?, trackno = ?, discno = ?, length = ? where id = ?''',
-			(tags.get('title'), tags.get('tracknumber'), tags.get('discnumber'), tags.get('length'), track['id']))
-
-	db.commit()
-
-
-def getTags(path):
-	# Sometimes this prints a (harmless) warning, AFAIK this can't be disabled :-/
-	f = taglib.File(path)
-
-	r = {}
-	for k, v in f.tags.items():
-		if k in ['DISCNUMBER', 'TRACKNUMBER']:
-			v = [v[0].split('/')[0]]
-		r[k.lower()] = v if len(v) > 1 else v[0]
-
-	r['length'] = f.length
-	return r
 
 
 def getLibrary():
@@ -180,6 +131,11 @@ def getLibrary():
 	return r
 
 
+def get_searches():
+	c = openDb().cursor()
+	return c.execute('select * from searches').fetchall()
+
+
 def playTrack(client, codec, id):
 	c = openDb().cursor()
 	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
@@ -195,26 +151,38 @@ def getAlbum(id):
 	artist = c.execute('select * from artists where id=?', (album['artist'],)).fetchone()
 	tracks = c.execute('select * from tracks where album=? order by discno, trackno', (album['id'],)).fetchall()
 
+	#album['rating'] = ratings[int(album['rating'])]
+	album['coverdata'] = ''
+
 	if album['cover']:
 		t = album['cover'].split('.').pop()
 		if t == 'jpg': t = 'jpeg'
+		cover_cache = '{}/tmp/{}.{}'.format(_root, album['id'], t)
 
-		if Image is not None:
+		def coverdata_str(d):
+			nonlocal album, t
+			album['coverdata'] = 'data:image/{};base64,{}'.format(
+				t, base64.b64encode(d).decode())
+
+		# Load from cache
+		if os.path.exists(cover_cache):
+			coverdata_str(open(cover_cache, 'rb').read())
+		# Convert to 800x800, save to cache
+		elif Image is not None:
 			img = Image.open(album['cover'])
 			img.thumbnail((800, 800), Image.ANTIALIAS)
 			out = io.BytesIO()
 			img.save(out, img.format)
 
-			album['coverdata'] = 'data:image/%s;base64,%s' % (t,
-				base64.b64encode(out.getvalue()).decode())
+			cover = out.getvalue()
+			open(cover_cache, 'wb').write(cover)
+			coverdata_str(cover)
+		# Load if smaller than 500KiB, else don't display
 		else:
 			if os.stat(album['cover']).st_size > 500 * 1024:
 				album['coverdata'] = ''
 			else:
-				album['coverdata'] = 'data:image/%s;base64,%s' % (t,
-					base64.b64encode(open(album['cover'], 'rb').read()).decode())
-	else:
-		album['coverdata'] = ''
+				coverdata_str(open(album['cover'], 'rb').read())
 
 	return {
 		'artist': artist,
@@ -247,7 +215,7 @@ for line in open('config.cfg').readlines():
 
 # The MIT License (MIT)
 #
-# Copyright © 2013 Martin Tournoij
+# Copyright © 2013-2014 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

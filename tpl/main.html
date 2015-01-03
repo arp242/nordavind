@@ -19,8 +19,19 @@
 				<div>
 					<i class="icon-filter"></i>
 					<input placeholder="Filter (artist/album)" />
+					<button class="btn btn-small save-search" title="Save search"><i class="icon-save"></i></button>
+					<select>
+						<option></option>
+						{% for s in searches %}
+							<option value="{{ s.search }}"  data-id="{{ s.id }}">{{ s.name }}</option>
+						{% endfor %}
+					</select>
 				</div>
 			</div>
+
+			<button class="btn btn-small random-album" title="Add a random album to the playlist from the currently visible albums in the library">
+				<i class="icon-random"></i>
+			</button>
 			{% include "library.html" %}
 			<div class="resize-handle resize-horizontal"></div>
 		</div>
@@ -80,7 +91,7 @@
 					</tr>
 				</thead>
 
-				<tbody>
+				<tbody class="tbody-playlist">
 				</tbody>
 			</table>
 		</div>
@@ -108,7 +119,7 @@
 		{#
 		<script src="/tpl/jquery.js?v={{ version }}"></script>
 		#}
-		<script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+		<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
 		<script src="/tpl/jquery.mousewheel.js?v={{ version }}"></script>
 		<script src="/tpl/scrollbar.js?v={{ version }}"></script>
 		<script src="/tpl/md5.js?v={{ version }}"></script>

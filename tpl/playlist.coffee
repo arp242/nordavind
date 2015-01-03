@@ -375,8 +375,8 @@ selectBox = (target) ->
 
 	# End
 	$('body').on 'mouseup.selectbox', (e) ->
-		maystart = false
 		dragging = false
+		maystart = false
 		startrow = null
 		box?.remove()
 		box = null
