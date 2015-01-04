@@ -1,8 +1,5 @@
 Nordavind is a web based audio player.
 
-The UI is inspired by foobar2000, or rather, my particular foobar2000 setup
-(Nordavind doesn’t offer the *extreme* flexibility that foobar2000 has).
-
 For a general impression, check out the [screenshots](https://bitbucket.org/Carpetsmoker/nordavind/wiki/Home)
 
 Current status: It's usable (I use it almost daily), but not as polished as I'd
@@ -11,30 +8,22 @@ like it to be, which is why there isn't a `1.0 release' yet.
 
 Browser support
 ===============
-**Nordavind works best in Firefox**, other current browsers (Opera, Chrome,
-IE10) also work, but experience minor issues. At the moment adding features,
-tweaking the interface, and fixing real bugs is a higher priority than dealing
-with various browser quirks (Firefox just happens to be the only browser that
-works without fizzle).
+**Nordavind works best in Firefox**; WebKit browsers (eg. Chrome) are known to
+be broken, as WebKit doesn't bufffer & seek properly (this seems to be a
+problem/bug on their side, near as I can figure out).  
+Other browsers may work, but aren't tested. Feel free to report problems if you
+encounter them.
 
-Browsers that will *never-ever* work are Internet Explorer 8 and Safari 5.
+Browsers that will *never* work are Internet Explorer 8 and Safari 5.
 
 
 Audio codecs
 ------------
-Nordavid uses the HTML5 `<audio>` element, while all current browsers support
-this reasonably well, there are some difference, notably, in the supported
-codecs.
-
-- Firefox and Opera will play Ogg Vorbis files
-- Internet Explorer and Safari will play MP3 files
-- Chrome will play both
-
-Nordavind will transparently convert files for you, but you should be aware that
-converting from MP3 to Ogg Vorbis (or vice versa) *will* reduce audio quality
-even at fairly high bitrates because you’re converting from one lossless format
-to another. So you may want to choose your browser depending on the format of
-you music collection.
+Nordavind will transparently convert FLAC, MP3, and OGG files for you so that
+your browser can play them, but you should be aware that converting from MP3 to
+Ogg Vorbis (or vice versa) *will* reduce audio quality even at fairly high
+bitrates because you’re converting from one lossless format to another. So you
+may want to choose your browser depending on the format of you music collection.
 
 Note that converting FLAC to either format is fine.
 
@@ -48,7 +37,7 @@ Dependencies
 - [Python 3](http://python.org/) (Python 2 will not work)
 - [CherryPy](http://www.cherrypy.org/)
 - [Jinja2](http://jinja.pocoo.org/docs/)
-- [pytaglib](https://pypi.python.org/pypi/pytaglib)
+- [mutagen](https://pypi.python.org/pypi/mutagen)
 - [Unidecode](https://pypi.python.org/pypi/Unidecode)
 - py-sqlite3 (Included in Python, sometimes a separate package)
 
@@ -79,23 +68,14 @@ Running
 Run `serve.py` to start the server. You can optionally add an `address:port`
 to listen on (defaults to `0.0.0.0:8001`).
 
-Note that Nordavind only supports a single user; you can’t use the same
-installation with multiple users.
-
 
 Adding your music collection
 ============================
-There are two scripts to update your music collection:
+You can use `update.py` to update your music collection; by default, this does a
+full update (add new files, update existing files, remove deleted files,
+calculate replaygain if missing).
 
-- `update.py` Does a full update (add new track, update existing, and remove
-  deleted tracks)
-- `addnew.py` Only add new tracks; this is significantly faster
-
-Both scripts accept a single argument, which is a directory in your _musicdir_,
-if given, only that directory will be updated.
-
-These scripts may give harmless warnings; they're from taglib, You can safely
-ignore them (doesn't seem like they can can be disabled...)
+See `update.py -h` for some options.
 
 
 Using Nordavind
@@ -152,14 +132,14 @@ Version 1.0, TODO
 
 Credits
 =======
-Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>  
+Copyright © 2013-2015 Martin Tournoij <martin@arp242.net>  
 MIT license applies
 
 Nordavind includes (in whole, or code based on):
 
 - [Bootstrap](http://getbootstrap.com/)
 - [Font awesome](http://fortawesome.github.io/Font-Awesome/)
-- [jQuery](http://jquery.com/)
-- [jQuery.mousewheel](https://github.com/brandonaaron/jquery-mousewheel)
-- [Perfect Scrollbar](http://github.com/noraesae/perfect-scrollbar)
 - [Javascript MD5](http://pajhome.org.uk/crypt/md5/md5.html)
+- [Perfect Scrollbar](http://github.com/noraesae/perfect-scrollbar)
+- [jQuery.mousewheel](https://github.com/brandonaaron/jquery-mousewheel)
+- [jQuery](http://jquery.com/)

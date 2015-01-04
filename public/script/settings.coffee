@@ -9,35 +9,7 @@ window.settings =
 	###
 	###
 	create: (content) ->
-		$('body').append """
-			<div id="backdrop"></div>
-			<div id='dialog'>
-				<div class="content">#{content}</div>
-				<div class="buttons"><button class="btn close">Close</div></div>
-			</div>
-		"""
-
-		$(window).on 'keydown.dialog', (e) ->
-			return unless e.keyCode is 27
-			$(window).off 'keydown.dialog'
-			window.settings.close()
-
-		$('#dialog').animate {
-			top: '100px'
-			opacity: '1'
-		}, {
-			duration: 200
-		}
-
-		$('#backdrop').animate {
-			opacity: '0.5'
-		}, {
-			duration: 200
-		}
-
-		$('#dialog .close').on 'click', (e) ->
-			e.preventDefault()
-			window.settings.close()
+		showDialog content
 
 		# Last.fm
 		sess = store.get 'lastfm'
@@ -68,6 +40,9 @@ window.settings =
 		rp = store.get 'replaygain'
 		$("input[name=replaygain][value=#{rp}]").prop 'checked', true
 
+		# Gapless
+		$('#gapless').val store.get('gapless')
+
 		# Misc
 		$('.clear-localstorage').on 'click', ->
 			window.localStorage.clear()
@@ -77,7 +52,9 @@ window.settings =
 	###
 	###
 	close: ->
-		store.set 'replaygain', $('input[name=replaygain]:checked').val()
+		gapless = parseFloat $('#gapless').val()
+		store.set 'gapless', gapless
+		window.player._timeToStart = gapless
+		store.set 'replaygain', $('input[name=replaygain]:checked').val() or 'album'
 		window.player.setVol()
-		$('#dialog').remove()
-		$('#backdrop').remove()
+		removeDialog()

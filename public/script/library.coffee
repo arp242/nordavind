@@ -7,6 +7,7 @@ window.Library = class Library
 
 		@selectRow $('#library li:first')
 		@initFilter()
+		@initEditFilter()
 		@initMouse()
 		@initKeyboard()
 		@initRandom()
@@ -61,6 +62,10 @@ window.Library = class Library
 				window._cache['artists'][data.artist.id] = data.artist
 				window._cache['albums'][data.album.id] = data.album
 				for t in data.tracks
+					# Allow a track to be in the playlist only once; since
+					# everything is done by track-id
+					continue if $("#playlist tr[data-id=#{t.id}]").length > 0
+
 					window._cache['tracks'][t.id] = t
 					row = """<tr data-id="#{t.id}" data-length="#{t.length}">
 						<td></td>
@@ -109,13 +114,14 @@ window.Library = class Library
 		
 		$('#search select').on 'change', (e) ->
 			v = $(this).val()
-			$('#search input').val(v).change()
+			$('#search input')
+				.attr 'data-id', $(this).find(':selected').attr('data-id')
+				.val v
+				.change()
 			pterm = null
 			t = null
 			clearTimeout t if t
 			$(this).val 0
-
-
 
 		dofilter = (target) ->
 			term = target.val().trim()
@@ -172,7 +178,6 @@ window.Library = class Library
 		my = this
 
 		do_filter = (data) ->
-			console.log data
 			unless data.success
 				alert data.error
 				return
@@ -181,7 +186,6 @@ window.Library = class Library
 			$('#library ol')[0].scrollTop = 0
 			data.albums.forEach (id) ->
 				row = $("#library .album[data-id=#{id}]")
-				row.show()
 				row.findPrev('.artist').show()
 				row.attr 'data-match', 'true'
 			my.updateScrollbar
@@ -311,6 +315,54 @@ window.Library = class Library
 		$(document).on 'click', '.random-album', (e) ->
 			e.preventDefault()
 
-			list = $('#library .album')
+			# TODO: If an album is already in the playlist, this is ignored, we
+			# should detect this, and try again (to ensure an album is always
+			# added)
+			if $('#search input').val() isnt ''
+				list = $('#library .album[data-match]')
+			else
+				list = $('#library .album')
+
 			rnd = list.eq Math.floor(Math.random() * list.length)
 			rnd.find('span').dblclick()
+
+	###
+	###
+	initEditFilter: ->
+		$(document).on 'click', '.save-search', (e) ->
+			id = $('#search input').attr 'data-id'
+			name = $("#saved-searches option[data-id=#{id}]").val()
+
+			html = """
+				<label for="save-search-name">Name</label>
+				<input id="save-search-name" type="text" value="#{name.quote()}">
+			"""
+
+			if id
+				html += """<br>
+					<label>
+						<input type="checkbox" checked>
+						Edit existing search (instead of creating a new)
+					</label>
+				"""
+
+
+			showDialog html
+
+			#def save_search(search, name=None, search_id=0):
+			#sel = $('#saved-searches').val()
+			#url = "/#{$('#search input').val()}"
+			#name = prompt('Enter a name for this search', $('#saved-searched :selected'))
+
+			return
+
+			if sel
+				url = ""
+			else
+				url = ""
+
+			jQuery.ajax
+				url: url
+				type: 'post'
+				dataType: 'json'
+				success: ->

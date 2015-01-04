@@ -9,6 +9,8 @@
 
     Player.prototype._nextAudio = null;
 
+    Player.prototype._timeToStart = store.get('gapless') || 0;
+
     Player.prototype._curplaying = {
       trackId: null,
       length: 1,
@@ -170,12 +172,18 @@
         }
         v = Math.min(100, my.audio.currentTime / my._curplaying.length * 100);
         my.seekbar.setpos(v);
+        if (!my._timeToStart && (my._start != null) && v > 0) {
+          my._timeToStart = (Date.now() - my._start) / 1000;
+          my._start = void 0;
+          dbg('Player', 'Set @_timeToStart to', my._timeToStart);
+        }
         t = displaytime(my.audio.currentTime);
         $('#status span:eq(0)').html('Playing');
         $('#status span:eq(1)').html("" + t + " / " + (displaytime(my._curplaying.length)));
         if (my._nextAudio === null && my._curplaying.length - my.audio.currentTime < 10) {
           next = $('#playlist .playing').next();
           if ((next != null) && (next.attr('data-id') != null)) {
+            dbg('Player', 'preparing _nextAudio');
             my._nextAudio = {
               audio: document.createElement('audio'),
               id: next.attr('data-id')
@@ -183,8 +191,14 @@
             my._nextAudio.audio.preload = 'auto';
             my._nextAudio.audio.src = "" + _root + "/play-track/" + (store.get('client')) + "/" + my.codec + "/" + (next.attr('data-id'));
             $(my.audio).after(my._nextAudio.audio);
-            return my.initPlayer(my._nextAudio.audio);
+            my.initPlayer(my._nextAudio.audio);
           }
+        }
+        if (my._nextAudio && my._curplaying.length - my.audio.currentTime < (my._timeToStart || .2)) {
+          log(my._curplaying.length, my.audio.currentTime, my._curplaying.length - my.audio.currentTime);
+          dbg('Player', 'Playing _nextAudio');
+          my.setVol(null, my._nextAudio.audio);
+          return my._nextAudio.audio.play();
         }
       });
       return $(audio).bind('progress', function(e) {
@@ -240,10 +254,13 @@
       }
       this._curplaying = {
         trackId: trackId,
-        length: length,
+        length: parseFloat(length),
         start: (new Date().getTime() / 1000).toNum() + new Date().getTimezoneOffset()
       };
       this.setVol();
+      if (!(this._timeToStart > 0)) {
+        this._start = Date.now();
+      }
       this.audio.play();
       $(this.audio).trigger('progress');
       row = $("#playlist tr[data-id=" + trackId + "]");
@@ -321,12 +338,18 @@
     	replaygain (do this when switching tracks)
      */
 
-    Player.prototype.setVol = function(v) {
+    Player.prototype.setVol = function(v, audio) {
       var apply, rg, scale, _ref, _ref1, _ref2;
       if (v == null) {
         v = null;
       }
-      if (v === null) {
+      if (audio == null) {
+        audio = null;
+      }
+      if (audio == null) {
+        audio = this.audio;
+      }
+      if (v == null) {
         v = store.get('volume');
       }
       store.set('volume', v);
@@ -339,11 +362,16 @@
         } else if (apply === 'track') {
           rg = (_ref2 = window._cache.tracks[this._curplaying.trackId]) != null ? _ref2.rg_gain : void 0;
         }
-        if (rg) {
-          scale = Math.pow(10, rg / 20);
-        }
       }
-      this.audio.volume = Math.min(1, v * scale / 100);
+      if (rg == null) {
+        rg = store.get('last_rg');
+      }
+      if (rg) {
+        store.set('last_rg', rg);
+        scale = Math.pow(10, rg / 20);
+      }
+      dbg('Player', "Setting volume to " + v + ", " + rg + ", " + scale);
+      audio.volume = Math.min(1, v * scale / 100);
       return window.vol.setpos(store.get('volume'));
     };
 

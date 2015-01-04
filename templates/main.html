@@ -3,12 +3,12 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 
-		<link rel="icon" type="image/png" href="/tpl/favicon.png">
-		<link rel="shortcut icon" href="/tpl/favicon.ico">
-		<link rel="apple-touch-icon" href="/tpl/logo.png">
+		<link rel="icon" type="image/png" href="/favicon.png">
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/logo.png">
 
-		<link rel="stylesheet" href="/tpl/bootstrap/bootstrap.css?v={{ version }}">
-		<link rel="stylesheet" href="/tpl/main.css?v={{ version }}">
+		<link rel="stylesheet" href="/contrib/bootstrap/bootstrap.css?v={{ version }}">
+		<link rel="stylesheet" href="/main.css?v={{ version }}">
 
 		<title>Nordavind</title>
 	</head>
@@ -20,32 +20,33 @@
 					<i class="icon-filter"></i>
 					<input placeholder="Filter (artist/album)" />
 					<button class="btn btn-small save-search" title="Save search"><i class="icon-save"></i></button>
-					<select>
-						<option></option>
+					<select id="saved-searches">
+						<option>Saved</option>
 						{% for s in searches %}
-							<option value="{{ s.search }}"  data-id="{{ s.id }}">{{ s.name }}</option>
+							<option value="{{ s.search }}" data-id="{{ s.id }}">{{ s.name }}</option>
 						{% endfor %}
 					</select>
 				</div>
 			</div>
 
-			<button class="btn btn-small random-album" title="Add a random album to the playlist from the currently visible albums in the library">
-				<i class="icon-random"></i>
-			</button>
 			{% include "library.html" %}
 			<div class="resize-handle resize-horizontal"></div>
 		</div>
 
 		<div id="player" class="stopped right-of-library pane">
 			<audio preload="auto" class="active"></audio>
+			
+			<button class="btn btn-small random-album"
+				title="Add a random album to the playlist from the currently visible albums in the library">
+				<i class="icon-random"></i>
+			</button>
 
 			<button class="btn btn-small play"><i class="icon-play"></i></button>
 			<button class="btn btn-small pause"><i class="icon-pause"></i></button>
+			<button class="btn btn-small stop"><i class="icon-stop"></i></button>
 
 			<button class="btn btn-small backward"><i class="icon-backward"></i></button>
 			<button class="btn btn-small forward"><i class="icon-forward"></i></button>
-
-			<button class="btn btn-small stop"><i class="icon-stop"></i></button>
 
 			<span class="volume"></span>
 			<span class="seekbar"><span class="buffer"></span></span>
@@ -116,22 +117,18 @@
 			<a href="http://code.arp242.net/nordavind"><i class="icon-bitbucket"></i> Nordavind {{ version }}</a>
 		</div>
 
-		{#
-		<script src="/tpl/jquery.js?v={{ version }}"></script>
-		#}
-		<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
-		<script src="/tpl/jquery.mousewheel.js?v={{ version }}"></script>
-		<script src="/tpl/scrollbar.js?v={{ version }}"></script>
-		<script src="/tpl/md5.js?v={{ version }}"></script>
+		<script src="/contrib/jquery.js?v={{ version }}"></script>
+		<script src="/contrib/jquery.mousewheel.js?v={{ version }}"></script>
+		<script src="/contrib/scrollbar.js?v={{ version }}"></script>
+		<script src="/contrib/md5.js?v={{ version }}"></script>
 
-		<script src="/tpl/lib.js?v={{ version }}"></script>
-		<script src="/tpl/settings.js?v={{ version }}"></script>
-		<script src="/tpl/library.js?v={{ version }}"></script>
-		<script src="/tpl/playlist.js?v={{ version }}"></script>
-		<script src="/tpl/player.js?v={{ version }}"></script>
-		<script src="/tpl/info.js?v={{ version }}"></script>
-		<script src="/tpl/scrobble.js?v={{ version }}"></script>
-
-		<script src="/tpl/main.js?v={{ version }}"></script>
+		<script src="/script/.compiled/lib.js?v={{ version }}"></script>
+		<script src="/script/.compiled/settings.js?v={{ version }}"></script>
+		<script src="/script/.compiled/library.js?v={{ version }}"></script>
+		<script src="/script/.compiled/playlist.js?v={{ version }}"></script>
+		<script src="/script/.compiled/player.js?v={{ version }}"></script>
+		<script src="/script/.compiled/info.js?v={{ version }}"></script>
+		<script src="/script/.compiled/scrobble.js?v={{ version }}"></script>
+		<script src="/script/.compiled/main.js?v={{ version }}"></script>
 	</body>
 </html>

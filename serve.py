@@ -2,7 +2,7 @@
 #
 # http://code.arp242.net/nordavind
 #
-# Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>
+# Copyright © 2013-2015 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -18,12 +18,14 @@ def JSONDefault(obj):
 		return obj.strftime('%Y-%m-%d %H:%M')
 
 
-def dbcache():
-	mtime = datetime.datetime.fromtimestamp(int(os.stat(nordavind.config['dbpath']).st_mtime))
+def set_cache(path):
+	mtime = datetime.datetime.fromtimestamp(int(os.stat(path).st_mtime))
 	fmt = '%a, %d %b %Y %H:%M:%S GMT'
+
 	cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-	cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
+	cherrypy.response.headers['Cache-Control'] = 'max-age={}, must-revalidate'.format(86400 * 365)
 	cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
+def dbcache(): set_cache(nordavind.config['dbpath'])
 
 
 class AgentCooper:
@@ -46,10 +48,10 @@ class AgentCooper:
 	def lastfm_callback(token=None):
 		return '''
 			<html><head></head></html><body>
-			<script>localStorage.setItem('nordavind_token', '%s'); window.close()</script>
+			<script>localStorage.setItem('nordavind_token', '{}'); window.close()</script>
 			You can close this window
 			</body></html>
-		''' % (token,)
+		'''.format(token)
 
 
 	@cherrypy.expose
@@ -69,8 +71,16 @@ class AgentCooper:
 		cherrypy.request.hooks.attach('on_end_request',
 			lambda: nordavind.audio.clean(client, trackid), True)
 
-		cherrypy.response.headers['Content-Type'] = 'audio/%s' % codec
-		return nordavind.playTrack(client, codec, trackid)
+		c = nordavind.openDb().cursor()
+		track = c.execute('select * from tracks where id=?', (trackid,)).fetchone()
+
+		cherrypy.response.headers['Content-Type'] = 'audio/{}'.format(codec)
+		cherrypy.response.headers['X-Content-Duration'] = track['length']
+
+		def play():
+			for buf in nordavind.audio.convert(client, track['id'], track['path'], codec):
+				yield buf
+		return play()
 	play_track._cp_config = {'response.stream': True}
 
 
@@ -95,10 +105,17 @@ class AgentCooper:
 
 
 	@cherrypy.expose
-	def save_search(search):
+	def save_search(search, name=None, search_id=0):
 		db = nordavind.openDb(create=False)
 		c = db.cursor()
+		if search_id > 0:
+			c.execute('update searches set name=?, search=? where id=?',
+				(name, search, namesearch_id,))
+		else:
+			c.execute('insert into searches (name, search) values (?, ?)',
+				(search, search_id))
 		db.commit()
+		return json.dumps({'success': True}, default=JSONDefault)
 
 
 	@cherrypy.expose
@@ -111,15 +128,14 @@ class AgentCooper:
 
 
 	@cherrypy.expose
-	def tpl(*args, **kwargs):
-		path = '%s/tpl/%s' % (nordavind._root, '/'.join(args))
+	def default(*args, **kwargs):
+		path = '{}/public/{}'.format(nordavind._root, '/'.join(args))
 		if not os.path.exists(path): raise cherrypy.NotFound()
 
-		mtime = datetime.datetime.fromtimestamp(int(os.stat('config.cfg').st_mtime))
-		fmt = '%a, %d %b %Y %H:%M:%S GMT'
-		cherrypy.response.headers['Last-Modified'] = mtime.strftime(fmt)
-		cherrypy.response.headers['Cache-Control'] = 'max-age=%s' % (86400 * 365,)
-		cherrypy.response.headers['Expires'] = (mtime + datetime.timedelta(days=7)).strftime(fmt)
+		set_cache(path)
+
+		if path.endswith('.woff'):
+			cherrypy.response.headers['Content-Type'] = 'application/font-woff'
 
 		return cherrypy.lib.static.serve_file(path)
 
@@ -129,7 +145,7 @@ def error_401(status, message, traceback, version):
 
 
 def error_404(status, message, traceback, version):
-	return '404'
+	return '404: Not found'
 
 
 server = '0.0.0.0'
@@ -148,24 +164,27 @@ cherrypy.config.update({
 	'error_page.401': error_401,
 })
 
-cherrypy.quickstart(AgentCooper, config={
-	'/': {
-		'tools.gzip.on': True,
-		'tools.gzip.mime_types': ['text/css', 'text/html', 'text/plain', 'application/json', 'application/javascript'],
+config = {
+	'tools.gzip.on': True,
+	'tools.gzip.mime_types': ['text/css', 'text/html', 'text/plain', 'application/json', 'application/javascript'],
+}
 
+if nordavind.config.get('user') and nordavind.config.get('password'):
+	config.update({
 		'tools.auth_digest.on': True,
 		'tools.auth_digest.realm': 'Nordavind',
 		'tools.auth_digest.key': nordavind.config['authkey'],
-		'tools.auth_digest.get_ha1': cherrypy.lib.auth_digest.get_ha1_dict_plain(
-			{ nordavind.config['user']: nordavind.config['password'] }
-		)
-	}
-})
+		'tools.auth_digest.get_ha1': cherrypy.lib.auth_digest.get_ha1_dict_plain({
+			nordavind.config['user']: nordavind.config['password']
+		})
+	})
+
+cherrypy.quickstart(AgentCooper, config={'/':  config})
 
 
 # The MIT License (MIT)
 #
-# Copyright © 2013-2014 Martin Tournoij
+# Copyright © 2013-2015 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

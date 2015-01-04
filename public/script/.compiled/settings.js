@@ -15,29 +15,7 @@
      */
     create: function(content) {
       var rp, sess;
-      $('body').append("<div id=\"backdrop\"></div>\n<div id='dialog'>\n	<div class=\"content\">" + content + "</div>\n	<div class=\"buttons\"><button class=\"btn close\">Close</div></div>\n</div>");
-      $(window).on('keydown.dialog', function(e) {
-        if (e.keyCode !== 27) {
-          return;
-        }
-        $(window).off('keydown.dialog');
-        return window.settings.close();
-      });
-      $('#dialog').animate({
-        top: '100px',
-        opacity: '1'
-      }, {
-        duration: 200
-      });
-      $('#backdrop').animate({
-        opacity: '0.5'
-      }, {
-        duration: 200
-      });
-      $('#dialog .close').on('click', function(e) {
-        e.preventDefault();
-        return window.settings.close();
-      });
+      showDialog(content);
       sess = store.get('lastfm');
       $('.lastfm').addClass(sess != null ? 'lastfm-enabled' : 'lastfm-disabled');
       if (sess != null) {
@@ -67,6 +45,7 @@
       });
       rp = store.get('replaygain');
       $("input[name=replaygain][value=" + rp + "]").prop('checked', true);
+      $('#gapless').val(store.get('gapless'));
       return $('.clear-localstorage').on('click', function() {
         window.localStorage.clear();
         return window.location.reload();
@@ -76,10 +55,13 @@
     /*
      */
     close: function() {
-      store.set('replaygain', $('input[name=replaygain]:checked').val());
+      var gapless;
+      gapless = parseFloat($('#gapless').val());
+      store.set('gapless', gapless);
+      window.player._timeToStart = gapless;
+      store.set('replaygain', $('input[name=replaygain]:checked').val() || 'album');
       window.player.setVol();
-      $('#dialog').remove();
-      return $('#backdrop').remove();
+      return removeDialog();
     }
   };
 

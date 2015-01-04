@@ -61,7 +61,6 @@ fieldset {
 }
 #library #search {
   padding-left: 5px;
-  padding-right: 20px;
   padding-top: 5px;
   height: 30px;
   margin-right: 3px;
@@ -79,19 +78,21 @@ fieldset {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   width: 9%;
+  font-size: 16px;
 }
 #library #search input {
   padding: 4px;
   padding-left: 22px;
-  width: 67%;
+  width: 60%;
 }
 #library #search input.invalid {
   border-color: #f11;
 }
 #library #search select {
   padding: 1px 4px;
-  width: 9%;
+  width: 21%;
   margin-left: -1px;
+  height: 2.1em;
 }
 #library #search .error {
   position: absolute;
@@ -102,11 +103,6 @@ fieldset {
   color: #fff;
   border-radius: 2px;
   border-top-right-radius: 0;
-}
-#library .random-album {
-  position: absolute;
-  right: 10px;
-  top: 5px;
 }
 #player {
   position: absolute;
@@ -269,6 +265,7 @@ fieldset {
   float: right;
   margin-top: 4px;
   z-index: 10;
+  cursor: zoom-in;
 }
 #info img[src=""] {
   display: none;
@@ -465,6 +462,7 @@ tr.active {
   z-index: 100;
 }
 #large-cover img {
+  cursor: zoom-out;
   max-width: 100%;
   max-height: 100%;
   position: absolute;

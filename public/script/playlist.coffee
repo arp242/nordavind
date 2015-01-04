@@ -350,7 +350,7 @@ window.Playlist = class Playlist
 	headSize: ->
 		$('#playlist thead th').each (i, cell) ->
 			$("#playlist-thead .cell:eq(#{i})").css 'width', "#{$(cell).width() + 2}px"
-		w = $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth())
+		w = Math.floor $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth())
 		$('#playlist-thead > .cell:last').css 'width', "+=#{w}px"
 
 

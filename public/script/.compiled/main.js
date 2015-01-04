@@ -96,6 +96,8 @@
       window.player.codec = 'ogg';
     } else if (new Audio().canPlayType('audio/mp3; codecs="mp3"') !== '') {
       window.player.codec = 'mp3';
+    } else {
+      err.push("Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback");
     }
     if (err.length > 0) {
       return alert(err.join('\n'));
@@ -163,6 +165,7 @@
     store.init('client', md5(new Date() + Math.random()));
     store.init('playlist', []);
     store.init('replaygain', 'album');
+    store.init('gapless', 0);
     setSize();
     window.library = new Library();
     window.playlist = new Playlist();
@@ -174,6 +177,7 @@
     setSize();
     $(window).on('resize', setSize);
     window.playlist.headSize();
+    setPane($('#playlist-wrapper'));
     if (store.get('lasttrack') != null) {
       return window.playlist.playRow($("#playlist tr[data-id=" + (store.get('lasttrack')) + "]"));
     }

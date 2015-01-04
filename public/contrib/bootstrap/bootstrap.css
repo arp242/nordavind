@@ -55,13 +55,10 @@ a:active {
 }
 img {
   /* Responsive images (ensure images don't scale beyond their parents) */
-
   max-width: 100%;
   /* Part 1: Set a maxium relative to the parent */
-
   height: auto;
   /* Part 2: Scale the height according to the width, otherwise you get stretching */
-
   vertical-align: middle;
   border: 0;
   -ms-interpolation-mode: bicubic;
@@ -476,8 +473,8 @@ table th[class*="span"],
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url('/tpl/font/fontawesome-webfont.eot?v=3.2.1');
-  src: url('/tpl/font/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('/tpl/font/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('/tpl/font/fontawesome-webfont.ttf?v=3.2.1') format('truetype');
+  src: url('/contrib/font/fontawesome-webfont.eot?v=3.2.1');
+  src: url('/contrib/font/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('/contrib/font/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('/contrib/font/fontawesome-webfont.ttf?v=3.2.1') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -500,7 +497,7 @@ table th[class*="span"],
 /* makes the font 33% larger relative to the icon container */
 .icon-large:before {
   vertical-align: -10%;
-  font-size: 1.3333333333333333em;
+  font-size: 1.33333333;
 }
 /* makes sure icons active on rollover in links */
 a [class^="icon-"],
@@ -511,16 +508,16 @@ a [class*=" icon-"] {
 [class^="icon-"].icon-fixed-width,
 [class*=" icon-"].icon-fixed-width {
   display: inline-block;
-  width: 1.1428571428571428em;
+  width: 1.14285714;
   text-align: right;
-  padding-right: 0.2857142857142857em;
+  padding-right: 0.28571429;
 }
 [class^="icon-"].icon-fixed-width.icon-large,
 [class*=" icon-"].icon-fixed-width.icon-large {
-  width: 1.4285714285714286em;
+  width: 1.42857143;
 }
 .icons-ul {
-  margin-left: 2.142857142857143em;
+  margin-left: 2.14285714;
   list-style-type: none;
 }
 .icons-ul > li {
@@ -528,8 +525,8 @@ a [class*=" icon-"] {
 }
 .icons-ul .icon-li {
   position: absolute;
-  left: -2.142857142857143em;
-  width: 2.142857142857143em;
+  left: -2.14285714;
+  width: 2.14285714;
   text-align: center;
   line-height: inherit;
 }

@@ -3,7 +3,7 @@
 #
 # http://code.arp242.net/nordavind
 #
-# Copyright © 2013-2014 Martin Tournoij <martin@arp242.net>
+# Copyright © 2013-2015 Martin Tournoij <martin@arp242.net>
 # See below for full copyright
 #
 
@@ -21,7 +21,6 @@ import nordavind.audio, nordavind.update
 _root = os.path.dirname(os.path.realpath(sys.argv[0]))
 _wwwroot = ''
 config = None
-ratings = ['Unrated', 'Crap', 'Not very good', 'Okay', 'Super']
 
 
 def openDb(create=True, read_only=False):
@@ -46,7 +45,7 @@ def openDb(create=True, read_only=False):
 def template(f, v={}):
 	from jinja2 import Environment, FileSystemLoader
 
-	env = Environment(loader=FileSystemLoader('%s/tpl' % _root))
+	env = Environment(loader=FileSystemLoader('{}/templates'.format(_root)))
 	env.filters['urlencode'] = lambda s: urllib.parse.quote_plus(s, '')
 
 	return re.sub(r'>\s*<', '><', env.get_template(f).render(**v))
@@ -123,6 +122,9 @@ def getLibrary():
 				(a['id'],)).fetchall()
 		})
 
+		# TODO: Can we also use unicodedate.normalize? Otherwise maybe iconv? I
+		# don't like the extra dependency just for this...
+		# TODO: Store this in db, so we don't have to calculate it every time
 		tr = unidecode.unidecode(a['name'])
 		if tr != a['name']:
 			r[len(r) - 1]['name_tr'] = tr
@@ -136,14 +138,6 @@ def get_searches():
 	return c.execute('select * from searches').fetchall()
 
 
-def playTrack(client, codec, id):
-	c = openDb().cursor()
-	track = c.execute('select * from tracks where id=?', (id,)).fetchone()
-
-	for buf in nordavind.audio.convert(client, id, track['path'], codec):
-		yield buf
-
-
 def getAlbum(id):
 	c = openDb().cursor()
 
@@ -151,9 +145,7 @@ def getAlbum(id):
 	artist = c.execute('select * from artists where id=?', (album['artist'],)).fetchone()
 	tracks = c.execute('select * from tracks where album=? order by discno, trackno', (album['id'],)).fetchall()
 
-	#album['rating'] = ratings[int(album['rating'])]
 	album['coverdata'] = ''
-
 	if album['cover']:
 		t = album['cover'].split('.').pop()
 		if t == 'jpg': t = 'jpeg'
@@ -165,18 +157,22 @@ def getAlbum(id):
 				t, base64.b64encode(d).decode())
 
 		# Load from cache
+		# TODO: Cache is never invalidated; we should do this in update.py
 		if os.path.exists(cover_cache):
 			coverdata_str(open(cover_cache, 'rb').read())
-		# Convert to 800x800, save to cache
+		# Convert to 800x800 if required, save result to cache
 		elif Image is not None:
 			img = Image.open(album['cover'])
-			img.thumbnail((800, 800), Image.ANTIALIAS)
-			out = io.BytesIO()
-			img.save(out, img.format)
 
-			cover = out.getvalue()
-			open(cover_cache, 'wb').write(cover)
-			coverdata_str(cover)
+			if img.size[0] > 800 or img.size[1] > 800:
+				img.thumbnail((800, 800), Image.ANTIALIAS)
+				out = io.BytesIO()
+				img.save(out, img.format)
+				cover = out.getvalue()
+				open(cover_cache, 'wb').write(cover)
+				coverdata_str(cover)
+			else:
+				coverdata_str(open(album['cover'], 'rb').read())
 		# Load if smaller than 500KiB, else don't display
 		else:
 			if os.stat(album['cover']).st_size > 500 * 1024:
@@ -209,13 +205,13 @@ for line in open('config.cfg').readlines():
 
 	if v == '': continue
 
-	if k == 'dbpath': v = '%s/%s' % (_root, v)
+	if k == 'dbpath': v = '{}/{}'.format(_root, v)
 	config[k] = v
 
 
 # The MIT License (MIT)
 #
-# Copyright © 2013-2014 Martin Tournoij
+# Copyright © 2013-2015 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

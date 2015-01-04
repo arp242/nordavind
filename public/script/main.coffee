@@ -91,10 +91,9 @@ detectSupport = ->
 		window.player.codec = 'ogg'
 	else if new Audio().canPlayType('audio/mp3; codecs="mp3"') isnt ''
 		window.player.codec = 'mp3'
-	#else
-	#	err.push "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
+	else
+		err.push "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
 
-	# TODO: We can do better than an alert()
 	alert err.join '\n' if err.length > 0
 
 
@@ -160,6 +159,7 @@ $(document).ready ->
 	store.init 'client', md5(new Date() + Math.random())
 	store.init 'playlist', []
 	store.init 'replaygain', 'album'
+	store.init 'gapless', 0
 
 	setSize()
 
@@ -176,6 +176,8 @@ $(document).ready ->
 	$(window).on 'resize', setSize
 	window.playlist.headSize()
 
+	# TODO: Focus library if playlist is empty
+	setPane $('#playlist-wrapper')
 	window.playlist.playRow $("#playlist tr[data-id=#{store.get('lasttrack')}]") if store.get('lasttrack')?
 
 

@@ -1,13 +1,27 @@
-import datetime, os, re, sqlite3
-import taglib
+import datetime, glob, os, re, subprocess, sqlite3
 import nordavind
 
+from mutagen.flac import FLAC
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
+from mutagen.mp3 import EasyMP3
+from mutagen.ogg import OggFileType
 
+
+rg_commands = {
+	'flac': ['metaflac', '--add-replay-gain'],
+	'mp3': ['mp3gain', '-a', '-s', 'i'],
+	'ogg': ['vorbisgain', '-asf'],
+	'wv': ['wvgain', '-a'],
+}
+
+
+verbose = False
 def dbg(msg, *args):
-	print(msg.format(*args))
+	if verbose: print(msg.format(*args))
 
 
-def add_or_update_track(path):
+def add_or_update_track(path, apply_replaygain=True):
 	db = nordavind.openDb()
 	c = db.cursor()
 	path = re.sub('/+', '/', path)
@@ -21,6 +35,11 @@ def add_or_update_track(path):
 		album_id = _add_or_update_album(c, id=track['album'], tags=tags, path=path, artist=artist_id)
 
 		dbg('Updating track {}; {}', track['id'], path)
+		if apply_replaygain and int(track['discno']) == 1 and int(track['trackno']) == 1:
+			if tags.get('replaygain_album_gain', None) == None:
+				apply_rg(path)
+				tags = get_tags(path)
+
 		sql_update(c, table='tracks', id=track['id'], data={
 			'name': tags.get('title'),
 			'trackno': tags.get('tracknumber'),
@@ -35,6 +54,10 @@ def add_or_update_track(path):
 		album_id = _add_or_update_album(c, name='??', path=path, tags=tags, artist=artist_id)
 
 		dbg('Inserting track {}', path)
+		if apply_replaygain and int(track['discno']) == 1 and int(track['trackno']) == 1:
+			apply_rg(path)
+			tags = get_tags(path)
+
 		sql_insert(c, 'tracks', {
 			'path': path,
 			'name': tags.get('title'),
@@ -59,7 +82,7 @@ def _add_or_update_artist(c, name=None, id=None):
 	elif id is not None:
 		return id
 	else:
-		print('Inserting artist {}', name)
+		dbg('Inserting artist {}', name)
 		c.execute('insert into artists (name) values (?)', (name,))
 		return c.lastrowid
 
@@ -105,25 +128,47 @@ def _add_or_update_album(c, name=None, id=None, path=None, tags=None, artist=Non
 
 
 def get_tags(path):
-	f = taglib.File(path)
+	if path.endswith('.flac'):
+		f = FLAC(path)
+	elif path.endswith('.mp3'):
+		f = EasyMP3(path)
+	elif path.endswith('.ogg'):
+		f = OggFileType(path)
+	else:
+		raise 'Unsupported file format: {}'.format(path)
 
 	r = {}
 	for k, v in f.tags.items():
-		if k in ['DISCNUMBER', 'TRACKNUMBER']:
+		if k in ['discnumber', 'tracknumber']:
 			v = [v[0].split('/')[0]]
 		r[k.lower()] = v if len(v) > 1 else v[0]
 
-	r['length'] = f.length
+	# EasyMP3 doesn't do TXXX
+	if path.endswith('.mp3'):
+		f = MP3(path)
+		for t in f.tags.getall('TXXX'):
+			r[t.desc.lower()] = t.text if len(t.text) > 1 else t.text[0]
+
+	r['length'] = f.info.length
 	return r
 
 
 def find_cover(path):
 	for p in ['cover.jpg', 'cover.jpeg', 'cover.png', 'front.jpg', 'front.jpeg', 'front.png']:
-		cover = '%s/%s' % (os.path.dirname(path), p)
+		cover = '{}/{}'.format(os.path.dirname(path), p)
 		if os.path.exists(cover):
 			return cover
 		else:
 			return None
+
+
+def apply_rg(first_track):
+	ext = first_track.split('.').pop()
+	d = os.path.dirname(first_track)
+	all_tracks = glob.glob('{}/*.{}'.format(d, ext))
+	cmd = rg_commands[ext] + all_tracks
+	dbg(str(cmd))
+	subprocess.call(cmd)
 
 
 def sql_update(cursor, table, id, data):

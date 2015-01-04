@@ -2,9 +2,17 @@
 (function() {
   var Slider;
 
+  window.debug = true;
+
   window.log = function() {
     if ((typeof console !== "undefined" && console !== null ? console.log : void 0) != null) {
       return console.log.apply(console, arguments);
+    }
+  };
+
+  window.dbg = function() {
+    if (window.debug && ((typeof console !== "undefined" && console !== null ? console.log : void 0) != null)) {
+      return log.apply(this, arguments);
     }
   };
 
@@ -87,7 +95,11 @@
 
   window.store = {
     get: function(k) {
-      return JSON.parse(localStorage.getItem("nordavind_" + k));
+      try {
+        return JSON.parse(localStorage.getItem("nordavind_" + k));
+      } catch (_error) {
+        return null;
+      }
     },
     set: function(k, v) {
       return localStorage.setItem("nordavind_" + k, JSON.stringify(v));
@@ -107,6 +119,52 @@
     m = Math.floor(sec / 60);
     s = Math.floor(sec % 60);
     return "" + m + ":" + (s < 10 ? 0 : '') + s;
+  };
+
+  window.removeDialog = function() {
+    $('#dialog').animate({
+      top: '-200px',
+      opacity: 0
+    }, {
+      duration: 200,
+      done: function() {
+        return $('#dialog').remove();
+      }
+    });
+    return $('#backdrop').animate({
+      opacity: 0
+    }, {
+      duration: 200,
+      done: function() {
+        return $('#backdrop').remove();
+      }
+    });
+  };
+
+  window.showDialog = function(content) {
+    $('body').append("<div id=\"backdrop\"></div>\n<div id='dialog'>\n	<div class=\"content\">" + content + "</div>\n	<div class=\"buttons\"><button class=\"btn close\">Close</div></div>\n</div>");
+    $(window).on('keydown.dialog', function(e) {
+      if (e.keyCode !== 27) {
+        return;
+      }
+      $(window).off('keydown.dialog');
+      return window.settings.close();
+    });
+    $('#dialog').animate({
+      top: '100px',
+      opacity: 1
+    }, {
+      duration: 200
+    });
+    $('#backdrop').animate({
+      opacity: 0.5
+    }, {
+      duration: 200
+    });
+    return $('#dialog .close').on('click', function(e) {
+      e.preventDefault();
+      return window.settings.close();
+    });
   };
 
   window.babyUrADrag = function(handle, start, move, end) {

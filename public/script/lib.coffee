@@ -1,5 +1,8 @@
+window.debug = true
 # Convenient shortcuts
 window.log = -> console.log.apply console, arguments if console?.log?
+window.dbg = -> log.apply this, arguments if window.debug and console?.log?
+
 window.$$ = (s) -> $(s).toArray()
 String.prototype.toNum = -> parseInt this, 10
 Number.prototype.toNum = -> parseInt this, 10
@@ -51,7 +54,11 @@ jQuery.fn.findPrev = (sel, num=1) -> this.findNext sel, num, true
 
 # localStorage wrapper
 window.store =
-	get: (k) -> JSON.parse localStorage.getItem("nordavind_#{k}")
+	get: (k) ->
+		try
+			JSON.parse localStorage.getItem("nordavind_#{k}")
+		catch
+			null
 	set: (k, v) -> localStorage.setItem "nordavind_#{k}", JSON.stringify(v)
 	del: (k) -> localStorage.removeItem "nordavind_#{k}"
 	init: (k, v) -> localStorage.setItem "nordavind_#{k}", JSON.stringify(v) unless localStorage.getItem "nordavind_#{k}"
@@ -62,6 +69,54 @@ window.displaytime = (sec) ->
 	m = Math.floor sec / 60
 	s = Math.floor sec % 60
 	return "#{m}:#{if s < 10 then 0 else ''}#{s}"
+
+window.removeDialog = ->
+	$('#dialog').animate {
+		top: '-200px'
+		opacity: 0
+	}, {
+		duration: 200
+		done: -> $('#dialog').remove()
+	}
+
+	$('#backdrop').animate {
+		opacity: 0
+	}, {
+		duration: 200
+		done: -> $('#backdrop').remove()
+	}
+
+window.showDialog = (content) ->
+	$('body').append """
+		<div id="backdrop"></div>
+		<div id='dialog'>
+			<div class="content">#{content}</div>
+			<div class="buttons"><button class="btn close">Close</div></div>
+		</div>
+	"""
+
+	$(window).on 'keydown.dialog', (e) ->
+		return unless e.keyCode is 27
+		$(window).off 'keydown.dialog'
+		window.settings.close()
+
+	$('#dialog').animate {
+		top: '100px'
+		opacity: 1
+	}, {
+		duration: 200
+	}
+
+	$('#backdrop').animate {
+		opacity: 0.5
+	}, {
+		duration: 200
+	}
+
+	$('#dialog .close').on 'click', (e) ->
+		e.preventDefault()
+		window.settings.close()
+
 
 
 # Drag & drop

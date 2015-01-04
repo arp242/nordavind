@@ -478,7 +478,7 @@
       $('#playlist thead th').each(function(i, cell) {
         return $("#playlist-thead .cell:eq(" + i + ")").css('width', "" + ($(cell).width() + 2) + "px");
       });
-      w = $('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth());
+      w = Math.floor($('#playlist-thead').width() - ($('#playlist-thead .cell:last').position().left + $('#playlist-thead .cell:last').outerWidth()));
       return $('#playlist-thead > .cell:last').css('width', "+=" + w + "px");
     };
 

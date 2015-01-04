@@ -1,8 +1,27 @@
 A TODO list :-)
 
-- Actually deal with various errors that may occur
-- Adding the same trackid twice to the playlist causes weird effects
-- Test (& fix) various browsers
+- Save/edit/remove of searches
+
+- We could deal with various artists albums better (ie. show artist for track)
+- Switch to aurora.js, or somesuch
+- Ability to play local files
+- Play FLAC without transcode
+	https://bugzilla.mozilla.org/show_bug.cgi?id=1039639
+- Better indication that something is loading; for example after you've clicked
+  on an album to add (this can take a few seconds)
 - More flexible library view (ie. grouping by arbitrary tags)
-- Specify columns in playlist
-- Resize columns in playlist
+- Ability to tag albums (not ID3 tags, but tags like "heavy metal")
+- Ability to specify columns in playlist
+- Manually resize columns in playlist
+- Seeking sometimes makes the playback pause ... Clicking again solves this
+
+- WebKit/Chrome doesn't buffer properly, can't seek
+	http://code.google.com/p/chromium/issues/detail?id=397365
+	http://stackoverflow.com/questions/8293687/sample-http-range-request-session
+	http://stackoverflow.com/questions/9563887/setting-html5-audio-position
+  We don't *know* the Content-Length, and we can't do content ranges ... :-/
+  Even when faking this (With the correct date, as experiment) it doesn't work
+  very well, it won't buffer the entire file. Seeking **ONLY** works when using
+  Accept-Ranges: bytes, which we can't support...
+
+  Going with aurora.js should hopefull solve this ...?

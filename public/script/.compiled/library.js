@@ -12,6 +12,7 @@
       });
       this.selectRow($('#library li:first'));
       this.initFilter();
+      this.initEditFilter();
       this.initMouse();
       this.initKeyboard();
       this.initRandom();
@@ -79,6 +80,9 @@
           _ref = data.tracks;
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             t = _ref[_i];
+            if ($("#playlist tr[data-id=" + t.id + "]").length > 0) {
+              continue;
+            }
             window._cache['tracks'][t.id] = t;
             row = "<tr data-id=\"" + t.id + "\" data-length=\"" + t.length + "\">\n	<td></td>\n	<td>" + t.discno + "." + (t.trackno < 10 ? 0 : '') + t.trackno + "</td>\n	<td>" + (data.artist.name.quote()) + " - " + (data.album.name.quote()) + "</td>\n	<td>" + (t.name.quote()) + "</td>\n	<td>" + (displaytime(t.length)) + "</td>\n</tr>";
             pl.append(row);
@@ -131,7 +135,7 @@
       $('#search select').on('change', function(e) {
         var v;
         v = $(this).val();
-        $('#search input').val(v).change();
+        $('#search input').attr('data-id', $(this).find(':selected').attr('data-id')).val(v).change();
         pterm = null;
         t = null;
         if (t) {
@@ -209,7 +213,6 @@
       var do_filter, my;
       my = this;
       do_filter = function(data) {
-        console.log(data);
         if (!data.success) {
           alert(data.error);
           return;
@@ -219,7 +222,6 @@
         data.albums.forEach(function(id) {
           var row;
           row = $("#library .album[data-id=" + id + "]");
-          row.show();
           row.findPrev('.artist').show();
           return row.attr('data-match', 'true');
         });
@@ -419,9 +421,42 @@
       return $(document).on('click', '.random-album', function(e) {
         var list, rnd;
         e.preventDefault();
-        list = $('#library .album');
+        if ($('#search input').val() !== '') {
+          list = $('#library .album[data-match]');
+        } else {
+          list = $('#library .album');
+        }
         rnd = list.eq(Math.floor(Math.random() * list.length));
         return rnd.find('span').dblclick();
+      });
+    };
+
+
+    /*
+     */
+
+    Library.prototype.initEditFilter = function() {
+      return $(document).on('click', '.save-search', function(e) {
+        var html, id, name, url;
+        id = $('#search input').attr('data-id');
+        name = $("#saved-searches option[data-id=" + id + "]").val();
+        html = "<label for=\"save-search-name\">Name</label>\n<input id=\"save-search-name\" type=\"text\" value=\"" + (name.quote()) + "\">";
+        if (id) {
+          html += "<br>\n<label>\n	<input type=\"checkbox\" checked>\n	Edit existing search (instead of creating a new)\n</label>";
+        }
+        showDialog(html);
+        return;
+        if (sel) {
+          url = "";
+        } else {
+          url = "";
+        }
+        return jQuery.ajax({
+          url: url,
+          type: 'post',
+          dataType: 'json',
+          success: function() {}
+        });
       });
     };
 

@@ -6,6 +6,7 @@ window.Player = class Player
 	# Easy reference to our <audio> element
 	audio: $('audio')[0]
 	_nextAudio: null
+	_timeToStart: store.get('gapless') or 0
 
 	# Current playing track
 	_curplaying:
@@ -125,14 +126,20 @@ window.Player = class Player
 			v = Math.min 100, my.audio.currentTime / my._curplaying.length * 100
 			my.seekbar.setpos v
 
+			if not my._timeToStart and my._start? and v > 0
+				my._timeToStart = (Date.now() - my._start) / 1000
+				my._start = undefined
+				dbg 'Player', 'Set @_timeToStart to', my._timeToStart
+
 			t = displaytime my.audio.currentTime
 			$('#status span:eq(0)').html 'Playing'
 			$('#status span:eq(1)').html "#{t} / #{displaytime my._curplaying.length}"
 
-			# Prepare the next audio element for gapless playback
+			# Prepare the next audio element for almost gapless playback
 			if my._nextAudio is null and my._curplaying.length - my.audio.currentTime < 10
 				next = $('#playlist .playing').next()
 				if next? and next.attr('data-id')?
+					dbg 'Player', 'preparing _nextAudio'
 					my._nextAudio =
 						audio: document.createElement 'audio'
 						id: next.attr 'data-id'
@@ -142,9 +149,18 @@ window.Player = class Player
 					$(my.audio).after my._nextAudio.audio
 					my.initPlayer my._nextAudio.audio
 
+			# TODO: This is not really "gapless", but the best I can manage...
+			# We want to switch to aurora.js or some such to fix this...
+			if my._nextAudio and my._curplaying.length - my.audio.currentTime < (my._timeToStart or .2)
+				log  my._curplaying.length,  my.audio.currentTime, my._curplaying.length - my.audio.currentTime
+				dbg 'Player', 'Playing _nextAudio'
+
+				# TODO: Makes assumption we are dealing with the same album
+				my.setVol null, my._nextAudio.audio
+				my._nextAudio.audio.play()
+
 		$(audio).bind 'progress', (e) ->
 			return unless $(this).hasClass 'active'
-
 			try
 				c = Math.min 100, Math.round(my.audio.buffered.end(0) / my._curplaying.length * 100)
 			catch exc
@@ -173,14 +189,17 @@ window.Player = class Player
 			return alert "Your browser doesn't seem to support either Ogg/Vorbis or MP3 playback"
 
 		@bufstart = null
+		# Outdated _nextAudio, remove it
 		if @_nextAudio? and trackId isnt @_nextAudio.id
 			$(@_nextAudio.audio).remove()
 			@_nextAudio = null
+		# Play from @_nextAudio
 		else if @_nextAudio?
 			@audio.remove()
 			@audio = @_nextAudio.audio
 			@_nextAudio = null
 			@audio.className = 'active'
+		# No @_nextAudio, re-use @audio
 		else
 			@audio.pause()
 			@audio.src = ''
@@ -188,10 +207,13 @@ window.Player = class Player
 
 		@_curplaying =
 			trackId: trackId
-			length: length
+			length: parseFloat(length)
 			start: (new Date().getTime() / 1000).toNum() + new Date().getTimezoneOffset()
 		@setVol()
+
+		@_start = Date.now() unless @_timeToStart > 0
 		@audio.play()
+
 		$(@audio).trigger 'progress'
 
 		row = $("#playlist tr[data-id=#{trackId}]")
@@ -254,8 +276,9 @@ window.Player = class Player
 	If the volume is null, we'll set it to the current volume, but re-apply
 	replaygain (do this when switching tracks)
 	###
-	setVol: (v=null) ->
-		v = store.get('volume') if v is null
+	setVol: (v=null, audio=null) ->
+		audio = @audio unless audio?
+		v = store.get('volume') unless v?
 		store.set 'volume', v
 
 		scale = 1
@@ -266,7 +289,13 @@ window.Player = class Player
 				rg = window._cache.albums[window._cache.tracks[@_curplaying.trackId]?.album]?.rg_gain
 			else if apply is 'track'
 				rg = window._cache.tracks[@_curplaying.trackId]?.rg_gain
-			scale = Math.pow(10, rg / 20) if rg
 
-		@audio.volume = Math.min 1, v * scale / 100
+		# On the first pageload the album isn't loaded yet
+		rg = store.get 'last_rg' unless rg?
+		if rg
+			store.set 'last_rg', rg
+			scale = Math.pow 10, rg / 20
+
+		dbg 'Player', "Setting volume to #{v}, #{rg}, #{scale}"
+		audio.volume = Math.min 1, v * scale / 100
 		window.vol.setpos store.get('volume')
