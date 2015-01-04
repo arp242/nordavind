@@ -193,6 +193,9 @@ def getAlbumByTrack(id):
 		(id,)).fetchone()['album'])
 
 
+if not os.path.exists('config.cfg'):
+	print('No config.cfg; copy config.cfg.default & edit it')
+	sys.exit(1)
 
 config = {}
 for line in open('config.cfg').readlines():
@@ -207,6 +210,10 @@ for line in open('config.cfg').readlines():
 
 	if k == 'dbpath': v = '{}/{}'.format(_root, v)
 	config[k] = v
+
+if config.get('musicpath', '') == '':
+	print('No musicpath in config.cfg, set it to where you keep your music')
+	sys.exit(1)
 
 
 # The MIT License (MIT)

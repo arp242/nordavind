@@ -2,13 +2,9 @@
 # or may be an absolute path (starts with a /).
 #
 # You need to restart nordavind for changes to take effect.
-#
 
 # Location of your music files
 musicpath = /data/music
-
-# Location of database to use
-dbpath = db/db.sqlite3
 
 # The username & password to access Nordavind
 # If empty, no authentication is used
@@ -16,4 +12,9 @@ user =
 password = 
 
 # Secret key only known on the server (used in authentication)
-authkey = r0t9hwguivnewefdw
+# For extra safetly, fill in a random string here; ie:
+# strings -n1 < /dev/urandom | tr -d '[:space:]' | head -c30
+authkey = ymk0tNI$96yck6N\4LurwFiq-X/u)@
+
+# Location of database to use
+dbpath = db/db.sqlite3
