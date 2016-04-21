@@ -228,6 +228,12 @@
       });
     };
 
+    Player.prototype.playStream = function() {
+      this.audio.src = '/stream_path/%2Fdata%2Fmusic%2FAyreon%2F1998%20Into%20the%20Electric%20Castle%2F2.06%20The%20Mirror%20Maze_%20A%29%20Inside%20the%20Mirror%20Maze%20-%20B%29%20Through%20the%20Mirror.flac';
+      this.audio.play();
+      return $(this.audio).trigger('progress');
+    };
+
 
     /*
     	Play audio file `trackId` of `length` seconds

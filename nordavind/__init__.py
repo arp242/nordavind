@@ -208,7 +208,7 @@ for line in open('config.cfg').readlines():
 
 	if v == '': continue
 
-	if k == 'dbpath': v = '{}/{}'.format(_root, v)
+	if k == 'dbpath' and v[0] != '/': v = '{}/{}'.format(_root, v)
 	config[k] = v
 
 if config.get('musicpath', '') == '':

@@ -34,9 +34,18 @@ def convert(client, id, path, codec):
 def clean(client, id):
 	global _procs
 
+	id = str(id)
+	#print('==> client: {}'.format(client))
+	#print('==> id: {} {}'.format(id), type(id))
+	#print('==> _procs: {}'.format(_procs))
+	#print('==> _proc.get(client): {}'.format(_procs.get(client)))
+	#print('==> _procs.get(client).get(id): {}'.format(_procs.get(client).get(id)))
+	#print('==> key_types: {}'.format(list(map(type,_procs.get(client).keys()))))
 	if _procs.get(client) and _procs.get(client).get(id):
 		_procs[client][id].reverse()
-		for p in _procs[client][id]: p.kill()
+		for p in _procs[client][id]:
+			print('killing {}; {}', p, _procs)
+			p.kill()
 		del _procs[client][id]
 
 

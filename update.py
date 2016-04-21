@@ -3,7 +3,7 @@
 # Do a full update of the database
 #
 
-import argparse, os, sys, subprocess
+import argparse, os, sys
 
 import nordavind
 

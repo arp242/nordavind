@@ -85,6 +85,32 @@ class AgentCooper:
 
 
 	@cherrypy.expose
+	def stream_path(path):
+		path = os.path.realpath(path)
+		if not path.startswith(nordavind.config['musicpath']):
+			raise cherrypy.HTTPError(401)
+
+		mime = {
+			'flac': 'x-flac',
+			'mp3': 'mpeg',
+			'ogg': 'ogg',
+		}.get(path.split('.').pop())
+		size = os.stat(path).st_size
+
+		cherrypy.response.headers['Content-Length'] = size
+		cherrypy.response.headers['Content-Type'] = 'audio/{}'.format(mime)
+
+		fp = open(path, 'rb')
+		def go():
+			while True:
+				d = fp.read(4096)
+				if d is None: break
+				yield d
+		return go()
+	stream_path._cp_config = {'response.stream': True}
+
+
+	@cherrypy.expose
 	def sql_search(sql):
 		db = nordavind.openDb(create=False, read_only=True)
 		c = db.cursor()

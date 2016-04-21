@@ -54,7 +54,7 @@ def add_or_update_track(path, apply_replaygain=True):
 		album_id = _add_or_update_album(c, name='??', path=path, tags=tags, artist=artist_id)
 
 		dbg('Inserting track {}', path)
-		if apply_replaygain and int(track['discno']) == 1 and int(track['trackno']) == 1:
+		if apply_replaygain and int(tags.get('discnumber', 1)) == 1 and int(tags['tracknumber']) == 1:
 			apply_rg(path)
 			tags = get_tags(path)
 
