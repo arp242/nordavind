@@ -163,12 +163,15 @@ def find_cover(path):
 
 
 def apply_rg(first_track):
-	ext = first_track.split('.').pop()
-	d = os.path.dirname(first_track)
-	all_tracks = glob.glob('{}/*.{}'.format(d, ext))
-	cmd = rg_commands[ext] + all_tracks
-	dbg(str(cmd))
-	subprocess.call(cmd)
+	try:
+		ext = first_track.split('.').pop()
+		d = os.path.dirname(first_track)
+		all_tracks = glob.glob('{}/*.{}'.format(d, ext))
+		cmd = rg_commands[ext] + all_tracks
+		dbg(str(cmd))
+		subprocess.call(cmd)
+	except Exception as exc:
+		print('could not apply replaygain: {}'.format(exc))
 
 
 def sql_update(cursor, table, id, data):
