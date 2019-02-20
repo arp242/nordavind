@@ -1,0 +1,4 @@
+/*.pyc
+/tmp/*
+/db/db.sqlite3
+/config.cfg
